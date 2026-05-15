@@ -1,3 +1,9 @@
+## [v2.6.97] - 2026-05-15
+
+### 修复
+
+- **Chat 渠道 Gemini 端点注入 thought_signature** - 当 Chat 渠道 serviceType 为 openai 但实际对接 Gemini 上游时，自动为 function calling 的 tool_calls 注入 thought_signature，避免 Gemini 3 模型返回 400 错误
+
 ## [v2.6.96] - 2026-05-15
 
 ### 修复
