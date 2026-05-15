@@ -169,6 +169,7 @@
                 <v-icon size="14">mdi-open-in-new</v-icon>
               </v-btn>
               <span class="text-caption text-medium-emphasis ml-2">{{ element.serviceType }}</span>
+              <v-icon v-if="element.noVision" size="14" color="warning" class="ml-1">mdi-eye-off</v-icon>
               <span v-if="element.description" class="text-caption text-disabled ml-3 channel-description">{{ element.description }}</span>
               <!-- Expand icon -->
               <v-icon
@@ -485,6 +486,7 @@
                 @keydown.space.prevent="$emit('edit', channel)"
               >{{ channel.name }}</span>
               <span class="text-caption text-disabled ml-2">{{ channel.serviceType }}</span>
+              <v-icon v-if="channel.noVision" size="14" color="warning" class="ml-1">mdi-eye-off</v-icon>
             </div>
             <div v-if="channel.description" class="channel-info-desc text-caption text-disabled">
               {{ channel.description }}

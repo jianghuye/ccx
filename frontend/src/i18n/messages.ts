@@ -291,6 +291,7 @@ export type MessageKey =
   | 'channelCard.tooltipError'
   | 'channelCard.tooltipUnknown'
   | 'channelCard.noVision'
+  | 'channelCard.hasVision'
   | 'channelLogs.title'
   | 'channelLogs.autoRefresh'
   | 'channelLogs.autoRefreshing'
@@ -690,6 +691,7 @@ export const messages: Record<SupportedLocale, Record<MessageKey, string>> = {
     'channelCard.tooltipError': 'Connection error: check the Base URL, network, or API key.',
     'channelCard.tooltipUnknown': 'Not checked yet: click "Test latency" to run a check.',
     'channelCard.noVision': 'This channel does not support image input',
+    'channelCard.hasVision': 'This channel supports image input',
     'channelLogs.title': 'Channel logs - {channel}',
     'channelLogs.autoRefresh': 'Auto refresh',
     'channelLogs.autoRefreshing': 'Auto refreshing',
@@ -1088,6 +1090,7 @@ export const messages: Record<SupportedLocale, Record<MessageKey, string>> = {
     'channelCard.tooltipError': 'Koneksi bermasalah: periksa Base URL, jaringan, atau API key.',
     'channelCard.tooltipUnknown': 'Belum dicek: klik "Tes latensi" untuk memeriksa.',
     'channelCard.noVision': 'Channel ini tidak mendukung input gambar',
+    'channelCard.hasVision': 'Channel ini mendukung input gambar',
     'channelLogs.title': 'Log channel - {channel}',
     'channelLogs.autoRefresh': 'Refresh otomatis',
     'channelLogs.autoRefreshing': 'Sedang auto refresh',
@@ -1486,6 +1489,7 @@ export const messages: Record<SupportedLocale, Record<MessageKey, string>> = {
     'channelCard.tooltipError': '连接异常：请检查基础 URL、网络或 API 密钥',
     'channelCard.tooltipUnknown': '尚未检测：请点击”测试延迟”进行检测',
     'channelCard.noVision': '此渠道不支持图片输入',
+    'channelCard.hasVision': '此渠道支持图片输入',
     'channelLogs.title': '渠道日志 - {channel}',
     'channelLogs.autoRefresh': '自动刷新',
     'channelLogs.autoRefreshing': '自动刷新中',

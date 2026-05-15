@@ -14,6 +14,22 @@
           </div>
         </div>
         <div v-if="isEditing && props.channelType !== 'images'" class="header-capability-actions">
+          <v-tooltip location="bottom" :text="form.noVision ? t('addChannel.visionDisabled') : t('addChannel.visionEnabled')" :open-delay="150" content-class="key-tooltip">
+            <template #activator="{ props: tip }">
+              <v-btn
+                v-bind="tip"
+                :color="form.noVision ? 'warning' : 'grey'"
+                :variant="form.noVision ? 'tonal' : 'text'"
+                size="small"
+                icon
+                rounded="lg"
+                class="mr-2"
+                @click="form.noVision = !form.noVision"
+              >
+                <v-icon size="18">{{ form.noVision ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
           <v-btn
             color="success"
             variant="flat"
@@ -282,7 +298,7 @@
 
                         <template #append>
                           <div class="d-flex align-center ga-1">
-                            <v-tooltip :text="isModelNoVision(target) ? t('addChannel.visionDisabled') : t('addChannel.visionEnabled')" location="top">
+                            <v-tooltip :text="isModelNoVision(target) ? t('addChannel.visionDisabled') : t('addChannel.visionEnabled')" location="top" :open-delay="150" content-class="key-tooltip">
                               <template #activator="{ props: tip }">
                                 <v-btn
                                   v-bind="tip"
@@ -704,20 +720,6 @@
                   </div>
                 </div>
                 <v-switch v-model="form.insecureSkipVerify" inset color="warning" hide-details />
-              </div>
-            </v-col>
-
-            <!-- 不支持视觉（整渠道） -->
-            <v-col cols="12">
-              <div class="d-flex align-center justify-space-between">
-                <div class="d-flex align-center ga-2">
-                  <v-icon color="warning">mdi-eye-off</v-icon>
-                  <div>
-                    <div class="section-title section-title--soft">{{ t('addChannel.noVisionLabel') }}</div>
-                    <div class="text-caption text-medium-emphasis">{{ t('addChannel.noVisionHint') }}</div>
-                  </div>
-                </div>
-                <v-switch v-model="form.noVision" inset color="warning" hide-details />
               </div>
             </v-col>
 

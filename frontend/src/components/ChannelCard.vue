@@ -65,10 +65,21 @@
           >
             <span class="font-weight-bold">{{ channel.serviceType.toUpperCase() }}</span>
           </v-chip>
-          <!-- Vision 不支持指示器 -->
-          <v-tooltip v-if="channel.noVision" location="top" :text="t('channelCard.noVision')">
+          <!-- Vision 能力按钮 -->
+          <v-tooltip location="top" :text="channel.noVision ? t('channelCard.noVision') : t('channelCard.hasVision')" :open-delay="150" content-class="ccx-tooltip">
             <template #activator="{ props: tip }">
-              <v-icon v-bind="tip" size="14" color="warning">mdi-eye-off</v-icon>
+              <v-btn
+                v-bind="tip"
+                size="small"
+                :variant="channel.noVision ? 'tonal' : 'text'"
+                :color="channel.noVision ? 'warning' : 'grey'"
+                rounded="lg"
+                @click="$emit('toggleVision', channel.index)"
+              >
+                <v-icon size="16">
+                  {{ channel.noVision ? 'mdi-eye-off' : 'mdi-eye' }}
+                </v-icon>
+              </v-btn>
             </template>
           </v-tooltip>
           <!-- 渠道状态芯片 -->
@@ -374,6 +385,7 @@ defineEmits<{
   moveKeyToBottom: [channelId: number, apiKey: string]
   ping: [channelId: number]
   togglePin: [channelId: number]
+  toggleVision: [channelId: number]
   testCapability: [channelId: number]
 }>()
 
