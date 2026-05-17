@@ -63,6 +63,10 @@
         <div class="summary-label">{{ t('chart.outputTokens') }}</div>
         <div class="summary-value">{{ formatNumber(summaryData.totalOutputTokens) }}</div>
       </div>
+      <div v-if="summaryData.totalCacheReadTokens > 0 || summaryData.totalCacheCreationTokens > 0" class="summary-card">
+        <div class="summary-label">{{ t('chart.cacheRw') }}</div>
+        <div class="summary-value">{{ formatNumber(summaryData.totalCacheReadTokens) }} / {{ formatNumber(summaryData.totalCacheCreationTokens) }}</div>
+      </div>
     </div>
 
     <!-- Loading state -->
