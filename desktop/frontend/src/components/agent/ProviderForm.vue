@@ -19,10 +19,10 @@ const emit = defineEmits<{
 }>()
 
 const mimoPlanOptions = [
-  { label: '按量计费（默认）', value: 'https://api.mimo.xiaomi.com/v1' },
-  { label: '订阅套餐 - 中国', value: 'https://token-plan-cn.xiaomimimo.com/v1' },
-  { label: '订阅套餐 - 新加坡', value: 'https://token-plan-sgp.xiaomimimo.com/v1' },
-  { label: '订阅套餐 - 欧洲', value: 'https://token-plan-ams.xiaomimimo.com/v1' },
+  { label: '按量计费（默认）', value: 'https://api.xiaomimimo.com/anthropic' },
+  { label: '订阅套餐 - 中国', value: 'https://token-plan-cn.xiaomimimo.com/anthropic' },
+  { label: '订阅套餐 - 新加坡', value: 'https://token-plan-sgp.xiaomimimo.com/anthropic' },
+  { label: '订阅套餐 - 欧洲', value: 'https://token-plan-ams.xiaomimimo.com/anthropic' },
   { label: '自定义', value: '' },
 ]
 
@@ -69,17 +69,6 @@ const keyPlaceholder = (provider: AgentProvider) => {
       </select>
     </div>
 
-    <div v-if="selectedProvider !== 'ccx'" class="space-y-1.5">
-      <Label class="text-xs text-muted-foreground">API Key</Label>
-      <Input
-        type="password"
-        autocomplete="off"
-        :placeholder="keyPlaceholder(selectedProvider)"
-        :model-value="providerKeys[selectedProvider]"
-        @update:model-value="onKeyChange"
-      />
-    </div>
-
     <div v-if="selectedProvider === 'mimo'" class="space-y-1.5">
       <Label class="text-xs text-muted-foreground">MiMo 计费模式</Label>
       <select
@@ -97,11 +86,22 @@ const keyPlaceholder = (provider: AgentProvider) => {
       </select>
     </div>
 
+    <div v-if="selectedProvider !== 'ccx'" class="space-y-1.5">
+      <Label class="text-xs text-muted-foreground">API Key</Label>
+      <Input
+        type="password"
+        autocomplete="off"
+        :placeholder="keyPlaceholder(selectedProvider)"
+        :model-value="providerKeys[selectedProvider]"
+        @update:model-value="onKeyChange"
+      />
+    </div>
+
     <div v-if="selectedProvider === 'mimo' && selectedMiMoPlan === ''" class="space-y-1.5">
       <Label class="text-xs text-muted-foreground">Base URL</Label>
       <Input
         type="url"
-        placeholder="https://api.mimo.xiaomi.com/v1"
+        placeholder="https://api.xiaomimimo.com/anthropic"
         :model-value="miMOBaseUrl"
         @update:model-value="emit('update:miMOBaseUrl', String($event))"
       />

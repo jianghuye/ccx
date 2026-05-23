@@ -45,8 +45,8 @@ const claudeProviderKeys = ref<Record<AgentProvider, string>>({
 })
 const savedProviderKeys = ref<Record<string, string>>({})
 const codexOpenAIKey = ref('')
-const claudeMiMoBaseUrl = ref('https://api.mimo.xiaomi.com/v1')
-const selectedMiMoPlan = ref('https://api.mimo.xiaomi.com/v1')
+const claudeMiMoBaseUrl = ref('https://api.xiaomimimo.com/anthropic')
+const selectedMiMoPlan = ref('https://api.xiaomimimo.com/anthropic')
 const selectedCodexProvider = ref<AgentProvider>('ccx')
 
 const isClaudeProvider = (value?: string): value is AgentProvider => {
@@ -70,7 +70,7 @@ const claudeTargetBaseUrl = () => {
     case 'deepseek':
       return 'https://api.deepseek.com/anthropic'
     case 'mimo':
-      return claudeMiMoBaseUrl.value || 'https://api.mimo.xiaomi.com/v1'
+      return claudeMiMoBaseUrl.value || 'https://api.xiaomimimo.com/anthropic'
     default:
       return ''
   }
@@ -92,10 +92,10 @@ const agentStatusClass = (item: AgentConfigStatus | null) => {
 
 const resolveMiMoPlan = (url: string): string => {
   const known = [
-    'https://api.mimo.xiaomi.com/v1',
-    'https://token-plan-cn.xiaomimimo.com/v1',
-    'https://token-plan-sgp.xiaomimimo.com/v1',
-    'https://token-plan-ams.xiaomimimo.com/v1',
+    'https://api.xiaomimimo.com/anthropic',
+    'https://token-plan-cn.xiaomimimo.com/anthropic',
+    'https://token-plan-sgp.xiaomimimo.com/anthropic',
+    'https://token-plan-ams.xiaomimimo.com/anthropic',
   ]
   return known.includes(url) ? url : ''
 }

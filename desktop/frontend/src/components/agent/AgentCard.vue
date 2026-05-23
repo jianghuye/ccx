@@ -90,7 +90,7 @@ const applyLabel = computed(() => {
         :provider-keys="claudeProviderKeys!"
         :saved-provider-keys="savedProviderKeys || {}"
         :mi-m-o-base-url="claudeMiMoBaseUrl!"
-        :selected-mi-mo-plan="selectedMiMoPlan || 'https://api.mimo.xiaomi.com/v1'"
+        :selected-mi-mo-plan="selectedMiMoPlan || 'https://api.xiaomimimo.com/anthropic'"
         @update:selected-provider="emit('update:selectedClaudeProvider', $event)"
         @update:provider-keys="emit('update:claudeProviderKeys', $event)"
         @update:mi-m-o-base-url="emit('update:claudeMiMoBaseUrl', $event)"
