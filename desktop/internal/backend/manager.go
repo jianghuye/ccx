@@ -77,6 +77,10 @@ func NewManager(options Options) *Manager {
 	if dataDir == "" {
 		dataDir = defaultDataDir(rootDir)
 	}
+	// 优先使用 .env 中用户配置的端口，确保未启动时监控面板也显示正确端口
+	if envPort, err := readPortFromEnvFile(filepath.Join(dataDir, ".env")); err == nil && envPort > 0 {
+		port = envPort
+	}
 	return &Manager{
 		rootDir: rootDir,
 		dataDir: dataDir,
