@@ -123,19 +123,17 @@ jobs:
           rm -rf "bin/ccx-desktop.app"
         working-directory: ./desktop
 
-      - name: Generate macOS checksums and sign
+      - name: Generate macOS checksums
         run: |
           {
-            cd backend-go
-            shasum -a 256 ccx-darwin-arm64 ccx-darwin-amd64
-            cd ../desktop/bin
-            for f in CCX-Desktop-*-darwin-*.dmg; do
+            shasum -a 256 backend-go/ccx-darwin-arm64 backend-go/ccx-darwin-amd64
+            for f in desktop/bin/CCX-Desktop-*-darwin-*.dmg; do
               shasum -a 256 "$f"
             done
           } > checksums-macos.txt
-          cosign sign-blob checksums-macos.txt \
-            --bundle checksums-macos.txt.sigstore.json \
-            --yes
+
+      - name: Sign macOS checksums
+        run: cosign sign-blob checksums-macos.txt --bundle checksums-macos.txt.sigstore.json --yes
         env:
           COSIGN_YES: "true"
 
@@ -300,19 +298,17 @@ jobs:
           sha256sum ".release-staging/CCX-Desktop-${VERSION}-windows-arm64-setup.exe" | awk '{print $1}' > ".release-staging/CCX-Desktop-${VERSION}-windows-arm64-setup.exe.sha256"
         working-directory: ./desktop
 
-      - name: Generate Windows checksums and sign
+      - name: Generate Windows checksums
         run: |
           {
-            cd backend-go
-            sha256sum ccx-windows-amd64.exe ccx-windows-arm64.exe
-            cd ../desktop/.release-staging
-            for f in CCX-Desktop-*-windows-*-setup.exe; do
+            sha256sum backend-go/ccx-windows-amd64.exe backend-go/ccx-windows-arm64.exe
+            for f in desktop/.release-staging/CCX-Desktop-*-windows-*-setup.exe; do
               sha256sum "$f"
             done
           } > checksums-windows.txt
-          cosign sign-blob checksums-windows.txt \
-            --bundle checksums-windows.txt.sigstore.json \
-            --yes
+
+      - name: Sign Windows checksums
+        run: cosign sign-blob checksums-windows.txt --bundle checksums-windows.txt.sigstore.json --yes
         env:
           COSIGN_YES: "true"
 
@@ -418,19 +414,17 @@ jobs:
           sha256sum "bin/CCX-Desktop-${VERSION}-linux-amd64.AppImage" | awk '{print $1}' > "bin/CCX-Desktop-${VERSION}-linux-amd64.AppImage.sha256"
         working-directory: ./desktop
 
-      - name: Generate Linux checksums and sign
+      - name: Generate Linux checksums
         run: |
           {
-            cd backend-go
-            sha256sum ccx-linux-amd64 ccx-linux-arm64
-            cd ../desktop/bin
-            for f in CCX-Desktop-*-linux-*.AppImage; do
+            sha256sum backend-go/ccx-linux-amd64 backend-go/ccx-linux-arm64
+            for f in desktop/bin/CCX-Desktop-*-linux-*.AppImage; do
               sha256sum "$f"
             done
           } > checksums-linux.txt
-          cosign sign-blob checksums-linux.txt \
-            --bundle checksums-linux.txt.sigstore.json \
-            --yes
+
+      - name: Sign Linux checksums
+        run: cosign sign-blob checksums-linux.txt --bundle checksums-linux.txt.sigstore.json --yes
         env:
           COSIGN_YES: "true"
 
