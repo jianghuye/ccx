@@ -101,14 +101,17 @@ const applyLabel = computed(() => '应用配置')
           >
             <option value="ccx">CCX 本地网关</option>
             <option value="openai">OpenAI 官方</option>
+            <option value="dashscope">DashScope 直连</option>
+            <option value="opencode-zen">OpenCode Zen 直连</option>
+            <option value="opencode-go">OpenCode Go 直连</option>
           </select>
         </div>
-        <div v-if="selectedCodexProvider === 'openai'" class="space-y-1.5">
-          <Label class="text-xs text-muted-foreground">OpenAI API Key</Label>
+        <div v-if="selectedCodexProvider !== 'ccx'" class="space-y-1.5">
+          <Label class="text-xs text-muted-foreground">API Key</Label>
           <Input
             type="password"
             autocomplete="off"
-            :placeholder="savedProviderKeys?.['codex:openai'] ? '已保存，留空则使用已保存的 key' : '仅写入 Codex 官方配置'"
+            :placeholder="savedProviderKeys?.[`codex:${selectedCodexProvider}`] ? '已保存，留空则使用已保存的 key' : '仅写入 Codex 配置'"
             :model-value="codexOpenAIKey || ''"
             @update:model-value="emit('update:codexOpenAIKey', String($event))"
           />

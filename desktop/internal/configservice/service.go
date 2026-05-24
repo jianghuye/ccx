@@ -144,6 +144,9 @@ func (s *Service) Apply(req ApplyAgentConfigRequest, port int, accessKey string)
 		if provider == ProviderOpenAI {
 			return s.applyCodexOpenAI(req.APIKey)
 		}
+		if responsesURL, ok := codexResponsesBaseURL(provider); ok {
+			return s.applyCodexThirdParty(provider, responsesURL, req.APIKey)
+		}
 		if port == 0 {
 			return fmt.Errorf("CCX 端口未设置")
 		}
@@ -510,6 +513,55 @@ func (s *Service) applyCodexOpenAI(apiKey string) error {
 	return writeJSONAtomic(authPath, authData)
 }
 
+func codexResponsesBaseURL(provider string) (string, bool) {
+	switch provider {
+	case ProviderDashScope:
+		return "https://dashscope.aliyuncs.com/compatible-mode/v1", true
+	case ProviderOpenCodeZen:
+		return "https://opencode.ai/zen/v1", true
+	case ProviderOpenCodeGo:
+		return "https://opencode.ai/zen/go/v1", true
+	default:
+		return "", false
+	}
+}
+
+func (s *Service) applyCodexThirdParty(provider, baseURL, apiKey string) error {
+	configPath := s.codexConfigPath()
+	authPath := s.codexAuthPath()
+	configContent, _, err := readTextFile(configPath)
+	if err != nil {
+		return err
+	}
+	authData, _, err := readJSONMap(authPath)
+	if err != nil {
+		return err
+	}
+	key := strings.TrimSpace(apiKey)
+	if key == "" {
+		key = s.GetSavedProviderKeys()["codex:"+provider]
+	}
+	if key == "" {
+		return fmt.Errorf("%s API Key 不能为空", provider)
+	}
+	if err := s.saveProviderKey(PlatformCodex, provider, key); err != nil {
+		return err
+	}
+	block := fmt.Sprintf(`[model_providers.%s]
+name = %q
+base_url = %q
+wire_api = "responses"
+`, provider, provider, baseURL)
+	updated := upsertTopLevelTomlString(configContent, "model_provider", provider)
+	updated = restoreNamedTomlBlock(updated, "model_providers.ccx", nil)
+	updated = restoreNamedTomlBlock(updated, "model_providers.openai", nil)
+	updated = upsertNamedTomlBlock(updated, "model_providers."+provider, block)
+	if err := writeTextAtomic(configPath, updated); err != nil {
+		return err
+	}
+	authData["OPENAI_API_KEY"] = key
+	return writeJSONAtomic(authPath, authData)
+}
 func (s *Service) restoreCodex() error {
 	var state CodexProxyState
 	if err := readJSONFile(s.codexStatePath(), &state); err != nil {

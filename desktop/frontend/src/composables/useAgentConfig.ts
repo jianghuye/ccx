@@ -149,8 +149,8 @@ const loadAgentStatuses = async () => {
       claudeMiMoBaseUrl.value = claude.currentBaseUrl
       selectedMiMoPlan.value = resolveMiMoPlan(claude.currentBaseUrl)
     }
-    if (codex.provider === 'openai') {
-      selectedCodexProvider.value = 'openai'
+    if (codex.provider && codex.provider !== 'ccx' && codex.provider !== '') {
+      selectedCodexProvider.value = codex.provider as AgentProvider
     } else {
       selectedCodexProvider.value = 'ccx'
     }
@@ -201,8 +201,9 @@ const applyAgent = async (platform: AgentPlatform) => {
     }
     if (platform === 'codex') {
       request.provider = selectedCodexProvider.value
-      if (selectedCodexProvider.value === 'openai') {
-        request.apiKey = codexOpenAIKey.value.trim() || savedProviderKeys.value['codex:openai'] || ''
+      if (selectedCodexProvider.value !== 'ccx') {
+        const inputKey = codexOpenAIKey.value.trim()
+        request.apiKey = inputKey || savedProviderKeys.value[`codex:${selectedCodexProvider.value}`] || ''
       }
     }
     await ApplyAgentConfig(request)
