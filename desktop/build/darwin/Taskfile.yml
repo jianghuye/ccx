@@ -85,13 +85,20 @@ tasks:
       - cp {{.BIN_DIR}}/{{.APP_NAME}} {{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/MacOS
       - |
         CCX_GO_SRC=""
-        if [ -f "{{.BIN_DIR}}/ccx-go" ]; then
-          CCX_GO_SRC="{{.BIN_DIR}}/ccx-go"
-        elif [ -f "../dist/ccx-go" ]; then
-          CCX_GO_SRC="../dist/ccx-go"
-        fi
+        SEARCH_DIR="."
+        for i in 1 2 3 4 5 6; do
+          if [ -f "$SEARCH_DIR/{{.BIN_DIR}}/ccx-go" ]; then
+            CCX_GO_SRC="$SEARCH_DIR/{{.BIN_DIR}}/ccx-go"; break
+          fi
+          if [ -f "$SEARCH_DIR/dist/ccx-go" ]; then
+            CCX_GO_SRC="$SEARCH_DIR/dist/ccx-go"; break
+          fi
+          SEARCH_DIR="$SEARCH_DIR/.."
+        done
         if [ -n "$CCX_GO_SRC" ]; then
           cp "$CCX_GO_SRC" {{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/MacOS/
+        else
+          echo "WARN: ccx-go not found, skipping bundled backend"
         fi
       - cp build/darwin/Info.plist {{.BIN_DIR}}/{{.APP_NAME}}.app/Contents
       - |
