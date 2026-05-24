@@ -1,3 +1,17 @@
+## [Unreleased]
+
+### 修复
+
+- **第三方 provider 直连使用 ANTHROPIC_AUTH_TOKEN** - 修复桌面端第三方 provider（DeepSeek、MiMo、Kimi、GLM、MiniMax、DashScope、OpenCode）直连 Claude Code 时，API Key 错误写入 `ANTHROPIC_API_KEY` 的问题，改为正确写入 `ANTHROPIC_AUTH_TOKEN`
+  - `resolveClaudeProvider` 统一将第三方 provider 的 key 归入 `authToken` 返回值，与 CCX provider 行为一致
+  - apply、restore、preview 三条路径均通过同一函数解析，无需额外修改
+
+- **配置预览 Diff 掩码后丢失敏感字段变更** - 修复 Agent 配置预览弹窗中，敏感字段（如 `ANTHROPIC_AUTH_TOKEN`）变更时因掩码为 `***` 导致 diff 无法识别变更的问题
+  - 新增 `computeJSONDiffWithMask` / `computeTextDiffWithMask`：先在原始内容上做 LCS diff 正确识别变更类型，再用掩码后的内容填充展示行
+  - 更新全部 6 个 preview 函数（Claude/Codex apply & restore）使用先 diff 再掩码的方式
+  - 新增 `extractNestedStringValues` 支持从嵌套 map（如 `env` 子 map）提取敏感字段值
+  - 新增 4 个单元测试覆盖掩码 diff 核心场景
+
 ## [v2.7.28] - 2026-05-24
 
 ### 修复
