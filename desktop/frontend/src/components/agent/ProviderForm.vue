@@ -73,6 +73,8 @@ const keyPlaceholder = (provider: AgentProvider) => {
         <option value="glm">GLM 直连</option>
         <option value="minimax">MiniMax 直连</option>
         <option value="dashscope">DashScope 直连</option>
+        <option value="opencode-zen">OpenCode Zen 直连</option>
+        <option value="opencode-go">OpenCode Go 直连</option>
       </select>
     </div>
 

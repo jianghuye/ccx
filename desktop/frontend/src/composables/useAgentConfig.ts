@@ -20,6 +20,8 @@ const claudeProviderLabels: Record<AgentProvider | 'custom', string> = {
   glm: 'GLM',
   minimax: 'MiniMax',
   dashscope: 'DashScope',
+  'opencode-zen': 'OpenCode Zen',
+  'opencode-go': 'OpenCode Go',
   openai: 'OpenAI',
   custom: '自定义',
 }
@@ -33,6 +35,8 @@ const codexProviderLabels: Record<AgentProvider | 'custom', string> = {
   glm: 'GLM',
   minimax: 'MiniMax',
   dashscope: 'DashScope',
+  'opencode-zen': 'OpenCode Zen',
+  'opencode-go': 'OpenCode Go',
   custom: '自定义',
 }
 
@@ -53,6 +57,8 @@ const claudeProviderKeys = ref<Record<AgentProvider, string>>({
   glm: '',
   minimax: '',
   dashscope: '',
+  'opencode-zen': '',
+  'opencode-go': '',
   openai: '',
 })
 const savedProviderKeys = ref<Record<string, string>>({})
@@ -62,7 +68,7 @@ const selectedMiMoPlan = ref('https://api.xiaomimimo.com/anthropic')
 const selectedCodexProvider = ref<AgentProvider>('ccx')
 
 const isClaudeProvider = (value?: string): value is AgentProvider => {
-  return value === 'ccx' || value === 'deepseek' || value === 'mimo' || value === 'kimi' || value === 'glm' || value === 'minimax' || value === 'dashscope'
+  return value === 'ccx' || value === 'deepseek' || value === 'mimo' || value === 'kimi' || value === 'glm' || value === 'minimax' || value === 'dashscope' || value === 'opencode-zen' || value === 'opencode-go'
 }
 
 const claudeProviderLabel = (value?: string) => {
@@ -91,6 +97,10 @@ const claudeTargetBaseUrl = () => {
       return 'https://api.minimaxi.com/anthropic'
     case 'dashscope':
       return 'https://dashscope.aliyuncs.com/apps/anthropic'
+    case 'opencode-zen':
+      return 'https://opencode.ai/zen'
+    case 'opencode-go':
+      return 'https://opencode.ai/zen/go'
     default:
       return ''
   }

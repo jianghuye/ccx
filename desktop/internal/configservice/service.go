@@ -20,17 +20,21 @@ const (
 	ProviderKimi      = "kimi"
 	ProviderGLM       = "glm"
 	ProviderMiniMax   = "minimax"
-	ProviderDashScope = "dashscope"
-	ProviderCustom    = "custom"
+	ProviderDashScope    = "dashscope"
+	ProviderOpenCodeZen  = "opencode-zen"
+	ProviderOpenCodeGo   = "opencode-go"
+	ProviderCustom       = "custom"
 	ProviderOpenAI   = "openai"
 
 	deepSeekClaudeBaseURL = "https://api.deepseek.com/anthropic"
 	defaultMiMoBaseURL    = "https://api.xiaomimimo.com/anthropic"
 	kimiClaudeBaseURL     = "https://api.moonshot.cn/anthropic"
 	glmClaudeBaseURL      = "https://open.bigmodel.cn/api/anthropic"
-	miniMaxClaudeBaseURL  = "https://api.minimaxi.com/anthropic"
-	dashScopeClaudeBaseURL = "https://dashscope.aliyuncs.com/apps/anthropic"
-	stateVersion          = 1
+	miniMaxClaudeBaseURL     = "https://api.minimaxi.com/anthropic"
+	dashScopeClaudeBaseURL   = "https://dashscope.aliyuncs.com/apps/anthropic"
+	openCodeZenClaudeBaseURL = "https://opencode.ai/zen"
+	openCodeGoClaudeBaseURL  = "https://opencode.ai/zen/go"
+	stateVersion             = 1
 )
 
 type AgentConfigStatus struct {
@@ -691,6 +695,10 @@ func normalizeClaudeProvider(provider string) string {
 		return ProviderMiniMax
 	case ProviderDashScope:
 		return ProviderDashScope
+	case ProviderOpenCodeZen:
+		return ProviderOpenCodeZen
+	case ProviderOpenCodeGo:
+		return ProviderOpenCodeGo
 	default:
 		return provider
 	}
@@ -767,6 +775,18 @@ func resolveClaudeProvider(req ApplyAgentConfigRequest, port int, accessKey stri
 			baseURL = dashScopeClaudeBaseURL
 		}
 		return baseURL, "", apiKey, nil
+	case ProviderOpenCodeZen:
+		apiKey := strings.TrimSpace(req.APIKey)
+		if apiKey == "" {
+			return "", "", "", fmt.Errorf("OpenCode Zen API Key 不能为空")
+		}
+		return openCodeZenClaudeBaseURL, "", apiKey, nil
+	case ProviderOpenCodeGo:
+		apiKey := strings.TrimSpace(req.APIKey)
+		if apiKey == "" {
+			return "", "", "", fmt.Errorf("OpenCode Go API Key 不能为空")
+		}
+		return openCodeGoClaudeBaseURL, "", apiKey, nil
 	default:
 		return "", "", "", fmt.Errorf("不支持的 Claude Code provider: %s", provider)
 	}
@@ -791,6 +811,10 @@ func detectClaudeProvider(baseURL string) string {
 		return ProviderMiniMax
 	case strings.Contains(value, "dashscope.aliyuncs.com"):
 		return ProviderDashScope
+	case strings.Contains(value, "opencode.ai/zen/go"):
+		return ProviderOpenCodeGo
+	case strings.Contains(value, "opencode.ai/zen"):
+		return ProviderOpenCodeZen
 	default:
 		return ProviderCustom
 	}

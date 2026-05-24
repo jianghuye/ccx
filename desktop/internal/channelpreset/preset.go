@@ -11,7 +11,9 @@ const (
 	ProviderKimi      = "kimi"
 	ProviderGLM       = "glm"
 	ProviderMiniMax   = "minimax"
-	ProviderDashScope = "dashscope"
+	ProviderDashScope  = "dashscope"
+	ProviderOpenCodeZen = "opencode-zen"
+	ProviderOpenCodeGo  = "opencode-go"
 
 	TargetMessages  = "messages"
 	TargetChat      = "chat"
@@ -215,6 +217,44 @@ func Presets() []ProviderPreset {
 			Plans: []ProviderPlan{
 				{ID: "anthropic", Label: "Anthropic-compatible", BaseURL: "https://dashscope.aliyuncs.com/apps/anthropic", Description: "Claude Messages 原生入口", Recommended: true},
 				{ID: "openai-chat", Label: "OpenAI-compatible", BaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1#", Description: "DashScope OpenAI 兼容入口"},
+			},
+			Targets: []ChannelTarget{
+				{Type: TargetMessages, Label: "Messages 原生透传", Description: "Claude Code 直连或 CCX messages 渠道", Recommended: true},
+				{Type: TargetResponses, Label: "Codex Responses", Description: "OpenAI Responses 协议，供 Codex 使用"},
+				{Type: TargetChat, Label: "Chat 渠道透传", Description: "OpenAI Chat 协议，供 Chat 客户端使用"},
+			},
+			DefaultTarget: TargetMessages,
+		},
+		{
+			ID:                  ProviderOpenCodeZen,
+			Label:               "OpenCode Zen",
+			Description:         "按量付费精选模型网关，支持 Messages、Chat、Responses 三种协议。",
+			DirectAgent:         true,
+			NativeMessages:      true,
+			ChatCompatible:      true,
+			ResponsesCompatible: true,
+			Plans: []ProviderPlan{
+				{ID: "anthropic", Label: "Anthropic-compatible", BaseURL: "https://opencode.ai/zen/v1/messages", Description: "Claude Messages 原生入口", Recommended: true},
+				{ID: "openai-chat", Label: "OpenAI-compatible", BaseURL: "https://opencode.ai/zen/v1#", Description: "OpenCode Zen OpenAI 兼容入口"},
+			},
+			Targets: []ChannelTarget{
+				{Type: TargetMessages, Label: "Messages 原生透传", Description: "Claude Code 直连或 CCX messages 渠道", Recommended: true},
+				{Type: TargetResponses, Label: "Codex Responses", Description: "OpenAI Responses 协议，供 Codex 使用"},
+				{Type: TargetChat, Label: "Chat 渠道透传", Description: "OpenAI Chat 协议，供 Chat 客户端使用"},
+			},
+			DefaultTarget: TargetMessages,
+		},
+		{
+			ID:                  ProviderOpenCodeGo,
+			Label:               "OpenCode Go",
+			Description:         "低成本开源编程模型订阅服务（$5/月起），支持 Messages、Chat、Responses 三种协议。",
+			DirectAgent:         true,
+			NativeMessages:      true,
+			ChatCompatible:      true,
+			ResponsesCompatible: true,
+			Plans: []ProviderPlan{
+				{ID: "anthropic", Label: "Anthropic-compatible", BaseURL: "https://opencode.ai/zen/go/v1/messages", Description: "Claude Messages 原生入口", Recommended: true},
+				{ID: "openai-chat", Label: "OpenAI-compatible", BaseURL: "https://opencode.ai/zen/go/v1#", Description: "OpenCode Go OpenAI 兼容入口"},
 			},
 			Targets: []ChannelTarget{
 				{Type: TargetMessages, Label: "Messages 原生透传", Description: "Claude Code 直连或 CCX messages 渠道", Recommended: true},
@@ -439,9 +479,15 @@ func applyTargetDefaults(payload *ChannelPayload, provider string, target string
 			payload.PassbackReasoningContent = true
 		case ProviderDashScope:
 			payload.ModelMapping = map[string]string{
-				"haiku":  "qwen3.6-plus",
-				"opus":   "qwen3.6-plus",
-				"sonnet": "qwen3.6-plus",
+				"haiku":  "glm-5.1",
+				"opus":   "glm-5.1",
+				"sonnet": "glm-5.1",
+			}
+		case ProviderOpenCodeZen, ProviderOpenCodeGo:
+			payload.ModelMapping = map[string]string{
+				"haiku":  "glm-5.1",
+				"opus":   "glm-5.1",
+				"sonnet": "glm-5.1",
 			}
 		}
 	case TargetChat:
@@ -463,7 +509,9 @@ func applyTargetDefaults(payload *ChannelPayload, provider string, target string
 		case ProviderMiniMax:
 			payload.ModelMapping = map[string]string{"gpt": "MiniMax-M2.7"}
 		case ProviderDashScope:
-			payload.ModelMapping = map[string]string{"gpt": "qwen3.6-plus"}
+			payload.ModelMapping = map[string]string{"gpt": "glm-5.1"}
+		case ProviderOpenCodeZen, ProviderOpenCodeGo:
+			payload.ModelMapping = map[string]string{"gpt": "glm-5.1"}
 		}
 	case TargetResponses:
 		payload.ServiceType = "openai"
@@ -497,7 +545,9 @@ func applyTargetDefaults(payload *ChannelPayload, provider string, target string
 			payload.StripCodexClientTools = false
 			payload.CodexNativeToolPassthrough = true
 		case ProviderDashScope:
-			payload.ModelMapping = map[string]string{"gpt": "qwen3.6-plus"}
+			payload.ModelMapping = map[string]string{"gpt": "glm-5.1"}
+		case ProviderOpenCodeZen, ProviderOpenCodeGo:
+			payload.ModelMapping = map[string]string{"gpt": "glm-5.1"}
 		}
 	}
 }
