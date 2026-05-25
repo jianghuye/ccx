@@ -18,6 +18,14 @@ CCX 是一个高性能的 AI API 代理与协议转换网关，支持 Claude、O
 - Responses API 支持多轮会话跟踪
 - 前端构建产物嵌入后端，便于单二进制部署
 
+## 赞助商
+
+<a href="https://www.compshare.cn/?ytag=GPU_YY_git_ccx">
+  <img src="docs/sponsors/youyun-zhisuan.png" width="96" alt="优云智算 Logo">
+</a>
+
+感谢 [优云智算](https://www.compshare.cn/?ytag=GPU_YY_git_ccx) 赞助了本项目！优云智算是 UCloud 旗下 AI 云平台，主打包月、按次的高性价比国模 Agent Plan 套餐，低至 49 元/月起。同时提供官转稳定海外模型，支持接入 Claude Code、Codex 及 API 调用，支持企业高并发、7*24 技术支持、自助开票。通过此链接注册的用户，可得免费 5 元平台体验金！
+
 ## 界面预览
 
 ### 渠道编排
