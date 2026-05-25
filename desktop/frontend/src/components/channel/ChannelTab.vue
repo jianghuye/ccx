@@ -236,7 +236,7 @@ const submit = async () => {
           <div class="space-y-2">
             <Label class="text-xs text-slate-400">渠道名称</Label>
             <Input v-model="channelName" placeholder="desktop-provider-type" />
-            <p class="text-xs text-slate-500">建议保持唯一；如重复，CCX 会拒绝创建。</p>
+            <p class="text-xs text-slate-500">同名渠道会被直接覆盖更新；如需新建独立渠道，请改用不同名称。</p>
           </div>
         </div>
 
