@@ -244,9 +244,9 @@ func TestGenerateProxyAccessKey(t *testing.T) {
 	if !strings.HasPrefix(key, "ccx-") {
 		t.Errorf("key should start with ccx-, got %q", key)
 	}
-	// 24 bytes hex = 48 chars + "ccx-" prefix = 52 total
-	if len(key) != 52 {
-		t.Errorf("key length = %d, want 52", len(key))
+	// 8 bytes hex = 16 chars + "ccx-" prefix = 20 total
+	if len(key) != 20 {
+		t.Errorf("key length = %d, want 20", len(key))
 	}
 	// 两次生成不同
 	key2, _ := generateProxyAccessKey()

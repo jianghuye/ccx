@@ -689,7 +689,7 @@ func appendEnvValue(path string, key string, value string) error {
 }
 
 func generateProxyAccessKey() (string, error) {
-	buf := make([]byte, 24)
+	buf := make([]byte, 8)
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
 	}
