@@ -319,11 +319,12 @@ func BuildPayload(req CreateChannelRequest) (ChannelPayload, error) {
 		name = defaultChannelName(preset.ID, target)
 	}
 	payload := ChannelPayload{
-		Name:     name,
-		BaseURL:  baseURL,
-		APIKeys:  []string{apiKey},
-		Priority: 1,
-		Status:   "active",
+		Name:        name,
+		Description: strings.TrimSpace(req.Description),
+		BaseURL:     baseURL,
+		APIKeys:     []string{apiKey},
+		Priority:    1,
+		Status:      "active",
 	}
 	applyTargetDefaults(&payload, preset.ID, target)
 	return payload, nil

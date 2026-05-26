@@ -159,6 +159,7 @@ tasks:
       - mv "{{.BIN_DIR}}/{{.APP_NAME}}.app" "{{.BIN_DIR}}/{{.DISPLAY_APP_NAME}}.app" || true
       - |
         STAGING=$(mktemp -d)
+        trap 'rm -rf "$STAGING"' EXIT
         cp -R "{{.BIN_DIR}}/{{.DISPLAY_APP_NAME}}.app" "$STAGING/"
         APP_X=$(echo "{{.DMG_APP_POSITION}}" | cut -d, -f1)
         APP_Y=$(echo "{{.DMG_APP_POSITION}}" | cut -d, -f2)
@@ -177,8 +178,7 @@ tasks:
           --icon "{{.DISPLAY_APP_NAME}}.app" "$APP_X" "$APP_Y" \
           --app-drop-link "$LINK_X" "$LINK_Y" \
           "{{.DMG_OUTPUT}}" \
-          "$STAGING/" || true
-        rm -rf "$STAGING"
+          "$STAGING/"
       - rm -rf "{{.BIN_DIR}}/{{.DISPLAY_APP_NAME}}.app"
 
   run:
