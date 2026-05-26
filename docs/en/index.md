@@ -9,6 +9,9 @@ hero:
       text: Quick Start
       link: /en/guide/getting-started
     - theme: alt
+      text: Desktop Setup
+      link: /en/guide/desktop/
+    - theme: alt
       text: Client Setup
       link: /en/guide/clients/
     - theme: alt

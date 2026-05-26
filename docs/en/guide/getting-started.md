@@ -1,5 +1,7 @@
 # Quick Start
 
+If you prefer the desktop app, start with the [CCX Desktop setup guide](/en/guide/desktop/) and follow **Install → Configure key → Start service → Agent configuration → Add channels → Verify requests**.
+
 ## Installation
 
 ### Docker (Recommended)

@@ -1,5 +1,7 @@
 # Connect Claude Code to CCX
 
+If you are using **CCX Desktop**, you can apply local CCX settings from [Agent configuration](/en/guide/desktop/#agent-configuration) first, then return here for protocol details.
+
 Claude Code uses the Anthropic Messages protocol. When connecting it to CCX, use the CCX **Messages** endpoint.
 
 ## How it works

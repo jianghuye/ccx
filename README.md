@@ -74,7 +74,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the detailed design.
 
 ### Option 0: CCX Desktop
 
-If you prefer a desktop experience, start with [CCX Desktop](docs/guide/desktop).
+If you prefer a desktop experience, start with [CCX Desktop](docs/en/guide/desktop/).
 
 ### Option 1: Binary
 
@@ -193,8 +193,10 @@ make dev
 
 ## Additional Docs
 
-- [CCX Desktop (中文)](docs/guide/desktop)
-- [Client Setup (中文)](docs/guide/clients)
+- [CCX Desktop](docs/en/guide/desktop/)
+- [Client Setup](docs/en/guide/clients/)
+- [CCX Desktop (中文)](docs/guide/desktop/)
+- [Client Setup (中文)](docs/guide/clients/)
 - [README.zh-CN.md](README.zh-CN.md)
 - [backend-go/README.md](backend-go/README.md)
 - [ARCHITECTURE.md](ARCHITECTURE.md)

@@ -1,5 +1,7 @@
 # Client Setup Overview
 
+If you are using **CCX Desktop**, start with the [CCX Desktop setup guide](/en/guide/desktop/) for installation, key setup, service startup, agent configuration, and channel setup, then return here for client-specific details.
+
 CCX client setup docs are organized by client. Choose the client you use, then follow the matching page.
 
 ## Choose a client

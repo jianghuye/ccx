@@ -1,5 +1,7 @@
 # Connect Codex CLI / Codex App to CCX
 
+If you are using **CCX Desktop**, you can apply Codex settings from [Agent configuration](/en/guide/desktop/#agent-configuration) first, then return here to confirm the Responses endpoint and Base URL behavior.
+
 Codex CLI and Codex App use the same OpenAI-compatible configuration: Base URL, API key, and model name are the same. Only the configuration entry point differs.
 
 ## How it works

@@ -18,6 +18,7 @@ export const enConfig: LocaleSpecificConfig<DefaultTheme.Config> = {
             { text: 'Claude Code', link: '/en/guide/clients/claude-code' },
             { text: 'Codex CLI / Codex App', link: '/en/guide/clients/codex' },
             { text: 'OpenCode', link: '/en/guide/clients/opencode' },
+            { text: 'CCX Desktop', link: '/en/guide/desktop/' },
           ],
         },
       ],
@@ -26,6 +27,8 @@ export const enConfig: LocaleSpecificConfig<DefaultTheme.Config> = {
           text: 'Getting Started',
           items: [
             { text: 'Quick Start', link: '/en/guide/getting-started' },
+            { text: 'CCX Desktop', link: '/en/guide/desktop/' },
+            { text: 'Desktop Troubleshooting', link: '/en/guide/desktop/troubleshooting' },
             { text: 'Deployment', link: '/en/guide/deployment' },
             { text: 'Environment Variables', link: '/en/guide/environment' },
           ],

@@ -1,5 +1,7 @@
 # Connect OpenCode to CCX
 
+If you are using **CCX Desktop**, you can apply OpenCode settings from [Agent configuration](/en/guide/desktop/#agent-configuration) first, then return here to confirm the Chat endpoint and Base URL behavior.
+
 OpenCode can connect to CCX through OpenAI Chat-compatible configuration. Use the CCX **Chat** endpoint.
 
 ## How it works
