@@ -109,7 +109,7 @@ const handleConfirm = async () => {
         @restore="handleRestore(platform)"
         @update:selected-claude-provider="selectedClaudeProvider = $event"
         @update:claude-provider-keys="claudeProviderKeys = $event"
-        @update:mimo-base-url="claudeMimoBaseUrl = $event"
+        @update:claude-mimo-base-url="claudeMimoBaseUrl = $event"
         @update:selected-mimo-plan="selectedMimoPlan = $event"
         @update:selected-dash-scope-plan="selectedDashScopePlan = $event"
         @update:selected-codex-provider="selectedCodexProvider = $event"
