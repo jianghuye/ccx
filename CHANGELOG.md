@@ -1,3 +1,18 @@
+## [v2.8.9] - 2026-05-27
+
+### 修复
+
+- **MiMo 计费目标 URL 不更新** - 修复桌面端 MiMo 计费配置切换后目标 URL 未正确更新的问题。
+- **Claude 渠道思考块透传缺失** - 修复 Claude 渠道返回 reasoning/thinking blocks 时未按配置回传的问题。
+- **Responses 透传渠道预设误展示 gpt-5.x 一键设置** - Responses 协议透传渠道隐藏不适用的 gpt-5.x 一键预设，避免误配置。
+- **导引完成后默认页签错误** - 桌面端首次导引完成后默认跳转 Agent 配置，而非渠道中心。
+- **Sidebar 导入路径错误** - 修复桌面端 `Sidebar.vue` 绑定导入路径使用 `@/bindings` 导致的问题，改为正确的 `@bindings`。
+- **Responses 到 Claude 缺少 max_tokens 默认值** - 修复 Responses → Claude 链路缺少 `max_tokens` 默认值的问题。(#133)
+
+### 其他
+
+- **补充 max_tokens 边界测试** - 为 Responses → Claude 转换链路补充 `max_tokens` 边界测试，覆盖默认值与异常边界。
+
 ## [v2.8.8] - 2026-05-27
 
 ### 新增
