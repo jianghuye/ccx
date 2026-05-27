@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useStatus } from '@/composables/useStatus'
-import { GetVersion } from '@/bindings/github.com/BenedictKing/ccx/desktop/desktopservice'
-import type { VersionInfo } from '@/bindings/github.com/BenedictKing/ccx/desktop/models'
+import { GetVersion } from '@bindings/github.com/BenedictKing/ccx/desktop/desktopservice'
+import type { VersionInfo } from '@bindings/github.com/BenedictKing/ccx/desktop/models'
 import Logo from '@/components/layout/Logo.vue'
 import {
   Activity,
