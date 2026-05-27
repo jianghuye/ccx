@@ -1,12 +1,22 @@
-## [Unreleased]
+## [v2.8.8] - 2026-05-27
+
+### 新增
+
+- **DashScope Coding Plan 选项** - 桌面端 DashScope provider 新增 Coding Plan 计费选项，Claude 直连 Agent 配置支持 Coding Plan 选择器。
 
 ### 变更
 
 - **桌面端自更新从手写 updater 改为 Wails v3 内置 Updater** - 删除 `desktop/internal/updater/` 包（含 macOS DMG 挂载、Windows NSIS 安装器、Linux AppImage nohup 替换等平台安装器，行为模式易被杀软误杀）；移除 `CheckUpdate`/`DownloadAndInstall`/`CancelUpdate` Go 导出方法和 `UpdateInfo` 结构体；改用 Wails v3 `pkg/updater`（GitHub Releases Provider + SHA256SUMS 校验 + 内置更新 UI 窗口 + 30 分钟定时检查）；删除前端 `useUpdater.ts` composable 和 `UpdateDialog.vue` 组件，Sidebar 版本按钮改为纯展示（更新检查通过托盘菜单触发）；Wails v3 依赖从 alpha.95 升级到 alpha.96
+- **DashScope 按量付费计划标签对齐 MiMo 规范** - 统一 DashScope 渠道预设的按量付费计划标签显示，与 MiMo 规范保持一致。
 
 ### 修复
 
 - **Chat 渠道选择 Responses 上游时请求格式与端点错误** - 修复 Chat 渠道 `serviceType: "responses"` 时仍以 Chat 格式发送到 `/v1/chat/completions` 的问题；新增 Chat↔Responses 双向协议转换（请求：messages→input, max_tokens→max_output_tokens；响应：output→choices），流式 SSE 事件转换（response.output_text.delta→Chat chunk），前端预期请求 URL 同步修正为 `/v1/responses`。(#130)
+- **规范化 role 开关提示不够明确** - 明确 i18n 中规范化 role 开关的提示文案，注明 developer 角色转换与国内模型建议。
+
+### 文档
+
+- **添加英文 CCX Desktop 指南和入口链接** - 新增英文版 CCX 桌面端使用指南与文档入口链接。
 
 ## [v2.8.7] - 2026-05-27
 
