@@ -239,8 +239,8 @@ func Presets() []ProviderPreset {
 			ChatCompatible:      true,
 			ResponsesCompatible: true,
 			Plans: []ProviderPlan{
-				{ID: "anthropic", Label: "Anthropic-compatible", BaseURL: "https://dashscope.aliyuncs.com/apps/anthropic", Description: "Claude Messages 原生入口", Recommended: true},
-				{ID: "openai-chat", Label: "OpenAI-compatible", BaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1", Description: "DashScope OpenAI 兼容入口"},
+				{ID: "anthropic", Label: "按量 - Anthropic 入口", BaseURL: "https://dashscope.aliyuncs.com/apps/anthropic", Description: "Messages 原生入口", Recommended: true},
+				{ID: "openai-chat", Label: "按量 - OpenAI 入口", BaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1", Description: "Chat / Responses 通用入口"},
 				{ID: "coding-anthropic", Label: "Coding Plan (Anthropic)", BaseURL: "https://coding.dashscope.aliyuncs.com/apps/anthropic", Description: "订阅套餐 Messages 入口"},
 				{ID: "coding-openai-chat", Label: "Coding Plan (OpenAI)", BaseURL: "https://coding.dashscope.aliyuncs.com/v1", Description: "订阅套餐 OpenAI 兼容入口"},
 			},
