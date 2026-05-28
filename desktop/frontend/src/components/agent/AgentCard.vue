@@ -34,6 +34,11 @@ const props = defineProps<{
   codexProviderLabels?: Record<string, string>
   codexProviderLabel?: (value?: string) => string
   codexTargetBaseUrl?: () => string
+  selectedOpenCodeProvider?: AgentProvider
+  openCodeOpenAIKey?: string
+  openCodeProviderLabels?: Record<string, string>
+  openCodeProviderLabel?: (value?: string) => string
+  openCodeTargetBaseUrl?: () => string
 }>()
 
 const emit = defineEmits<{
@@ -46,6 +51,8 @@ const emit = defineEmits<{
   'update:selectedDashScopePlan': [value: string]
   'update:selectedCodexProvider': [value: AgentProvider]
   'update:codexOpenAIKey': [value: string]
+  'update:selectedOpenCodeProvider': [value: AgentProvider]
+  'update:openCodeOpenAIKey': [value: string]
 }>()
 
 const codexKeyRequired = computed(() => {
@@ -99,9 +106,9 @@ const openFileInEditor = async (filePath: string) => {
     <CardContent class="space-y-4">
       <div class="space-y-2 text-sm">
         <div v-for="detail in [
-          { label: '当前 Provider', value: (platform === 'codex' ? codexProviderLabel : claudeProviderLabel)?.(agentStatus?.provider) || agentStatus?.provider || '未设置' },
+          { label: '当前 Provider', value: (platform === 'codex' ? codexProviderLabel : platform === 'opencode' ? openCodeProviderLabel : claudeProviderLabel)?.(agentStatus?.provider) || agentStatus?.provider || '未设置' },
           { label: '当前 URL', value: agentStatus?.currentBaseUrl || '未设置' },
-          { label: '目标 URL', value: platform === 'claude' ? claudeTargetBaseUrl?.() : codexTargetBaseUrl?.() },
+          { label: '目标 URL', value: platform === 'claude' ? claudeTargetBaseUrl?.() : platform === 'opencode' ? openCodeTargetBaseUrl?.() : codexTargetBaseUrl?.() },
         ]" :key="detail.label" class="grid grid-cols-[8rem_minmax(0,1fr)] items-center gap-3">
           <span class="text-muted-foreground">{{ detail.label }}</span>
           <div class="min-w-0 text-right">
@@ -192,6 +199,47 @@ const openFileInEditor = async (filePath: string) => {
             :placeholder="savedProviderKeys?.[`codex:${selectedCodexProvider}`] ? '已保存，留空则使用已保存的 key' : codexKeyRequired ? '必填：输入 API Key' : '仅写入 Codex 配置'"
             :model-value="codexOpenAIKey || ''"
             @update:model-value="emit('update:codexOpenAIKey', String($event))"
+          />
+        </div>
+      </div>
+
+      <div v-else-if="platform === 'opencode'" class="space-y-3">
+        <div class="space-y-1.5">
+          <Label class="text-xs text-muted-foreground">Provider</Label>
+          <select
+            :value="selectedOpenCodeProvider"
+            class="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            @change="emit('update:selectedOpenCodeProvider', ($event.target as HTMLSelectElement).value as AgentProvider)"
+          >
+            <option value="ccx">CCX 本地网关</option>
+            <option value="deepseek">DeepSeek 直连</option>
+            <option value="mimo">MiMo 直连</option>
+            <option value="compshare">Compshare 直连</option>
+            <option value="kimi">Kimi 直连</option>
+            <option value="glm">GLM 直连</option>
+            <option value="minimax">MiniMax 直连</option>
+            <option value="dashscope">DashScope 直连</option>
+            <option value="opencode-zen">OpenCode Zen 直连</option>
+            <option value="opencode-go">OpenCode Go 直连</option>
+          </select>
+        </div>
+        <button
+          v-if="selectedOpenCodeProvider && selectedOpenCodeProvider !== 'ccx' && providerConsoleLinks[selectedOpenCodeProvider]"
+          type="button"
+          class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-200"
+          @click="openProviderConsole(selectedOpenCodeProvider)"
+        >
+          访问官方控制台
+          <ExternalLink class="h-3 w-3" />
+        </button>
+        <div v-if="selectedOpenCodeProvider !== 'ccx'" class="space-y-1.5">
+          <Label class="text-xs text-muted-foreground">API Key</Label>
+          <Input
+            type="password"
+            autocomplete="off"
+            :placeholder="savedProviderKeys?.[`codex:${selectedOpenCodeProvider}`] ? '已保存，留空则使用已保存的 key' : '输入 API Key'"
+            :model-value="openCodeOpenAIKey || ''"
+            @update:model-value="emit('update:openCodeOpenAIKey', String($event))"
           />
         </div>
       </div>

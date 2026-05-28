@@ -32,6 +32,25 @@ Model names, vision support, and special options differ by upstream. Finish the 
 
 ## 2. Configure OpenCode
 
+### Use CCX Desktop automation
+
+In **Agent Config → OpenCode**, keep the default **CCX local gateway** provider. Desktop maintains:
+
+- `~/.config/opencode/opencode.jsonc`: the OpenAI-compatible custom provider, for example `provider.ccx.options.baseURL`
+- `~/.local/share/opencode/auth.json`: the matching provider API key, for example `auth.ccx.key`
+
+In default CCX mode, the Base URL is:
+
+```text
+http://127.0.0.1:<current CCX port>/v1
+```
+
+Select `ccx/<model>` in OpenCode. Requests enter CCX through the Chat protocol and are then routed by CCX Chat channels to your configured upstreams.
+
+Agent Config also offers direct providers, but only for currently supported OpenAI Chat-compatible domestic providers plus OpenCode Zen / OpenCode Go. For any other provider, add it manually using the official OpenCode custom-provider flow.
+
+### Manual setup
+
 In OpenCode, choose an OpenAI-compatible / custom provider and fill in:
 
 | Setting | Value |

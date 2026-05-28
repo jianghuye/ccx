@@ -247,7 +247,7 @@ func (s *DesktopService) ApplyAgentConfig(req configservice.ApplyAgentConfigRequ
 	defer cancel()
 	status := s.manager.Status(ctx)
 	var key string
-	if platform == configservice.PlatformCodex || (platform == configservice.PlatformClaude && (req.Provider == "" || req.Provider == configservice.ProviderCCX)) {
+	if platform == configservice.PlatformCodex || platform == configservice.PlatformOpenCode || (platform == configservice.PlatformClaude && (req.Provider == "" || req.Provider == configservice.ProviderCCX)) {
 		if !status.Running {
 			return fmt.Errorf("请先启动 CCX 服务")
 		}
@@ -272,7 +272,7 @@ func (s *DesktopService) PreviewAgentConfigDiff(req configservice.ApplyAgentConf
 	defer cancel()
 	status := s.manager.Status(ctx)
 	var key string
-	if platform == configservice.PlatformCodex || (platform == configservice.PlatformClaude && (req.Provider == "" || req.Provider == configservice.ProviderCCX)) {
+	if platform == configservice.PlatformCodex || platform == configservice.PlatformOpenCode || (platform == configservice.PlatformClaude && (req.Provider == "" || req.Provider == configservice.ProviderCCX)) {
 		key, _ = s.manager.ReadProxyAccessKey()
 	}
 	return s.configService.PreviewApply(req, status.Port, key)

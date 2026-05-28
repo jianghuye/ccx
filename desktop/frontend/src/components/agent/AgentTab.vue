@@ -14,6 +14,7 @@ const {
   claudeProviderKeys,
   savedProviderKeys,
   codexOpenAIKey,
+  openCodeOpenAIKey,
   claudeMimoBaseUrl,
   selectedMimoPlan,
   selectedDashScopePlan,
@@ -26,9 +27,12 @@ const {
   loadAgentStatuses,
   canApplyAgent,
   selectedCodexProvider,
+  selectedOpenCodeProvider,
   codexProviderLabels,
   codexProviderLabel,
   codexTargetBaseUrl,
+  openCodeProviderLabel,
+  openCodeTargetBaseUrl,
   // Diff preview
   diffDialogOpen,
   diffResult,
@@ -105,6 +109,11 @@ const handleConfirm = async () => {
         :codex-provider-labels="codexProviderLabels"
         :codex-provider-label="codexProviderLabel"
         :codex-target-base-url="codexTargetBaseUrl"
+        :selected-open-code-provider="selectedOpenCodeProvider"
+        :open-code-open-a-i-key="openCodeOpenAIKey"
+        :open-code-provider-labels="codexProviderLabels"
+        :open-code-provider-label="openCodeProviderLabel"
+        :open-code-target-base-url="openCodeTargetBaseUrl"
         @apply="handleApply(platform)"
         @restore="handleRestore(platform)"
         @update:selected-claude-provider="selectedClaudeProvider = $event"
@@ -114,6 +123,8 @@ const handleConfirm = async () => {
         @update:selected-dash-scope-plan="selectedDashScopePlan = $event"
         @update:selected-codex-provider="selectedCodexProvider = $event"
         @update:codex-open-a-i-key="codexOpenAIKey = $event"
+        @update:selected-open-code-provider="selectedOpenCodeProvider = $event"
+        @update:open-code-open-a-i-key="openCodeOpenAIKey = $event"
       />
     </div>
     <p v-if="actionError" class="text-sm text-destructive-foreground">{{ actionError }}</p>

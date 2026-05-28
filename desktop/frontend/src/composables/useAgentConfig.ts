@@ -12,6 +12,7 @@ import {
 const agentLabels: Record<AgentPlatform, string> = {
   claude: 'Claude Code',
   codex: 'Codex',
+  opencode: 'OpenCode',
 }
 
 const claudeProviderLabels: Record<AgentProvider | 'custom', string> = {
@@ -44,12 +45,13 @@ const codexProviderLabels: Record<AgentProvider | 'custom', string> = {
   custom: '自定义',
 }
 
-const agentPlatforms: AgentPlatform[] = ['claude', 'codex']
+const agentPlatforms: AgentPlatform[] = ['claude', 'codex', 'opencode']
 
 // Module-level singletons
 const agentStatuses = ref<Record<AgentPlatform, AgentConfigStatus | null>>({
   claude: null,
   codex: null,
+  opencode: null,
 })
 const configLoading = ref(false)
 const selectedClaudeProvider = ref<AgentProvider>('ccx')
@@ -68,10 +70,12 @@ const claudeProviderKeys = ref<Record<AgentProvider, string>>({
 })
 const savedProviderKeys = ref<Record<string, string>>({})
 const codexOpenAIKey = ref('')
+const openCodeOpenAIKey = ref('')
 const claudeMimoBaseUrl = ref('https://api.xiaomimimo.com/anthropic')
 const selectedMimoPlan = ref('https://api.xiaomimimo.com/anthropic')
 const selectedDashScopePlan = ref('https://dashscope.aliyuncs.com/apps/anthropic')
 const selectedCodexProvider = ref<AgentProvider>('ccx')
+const selectedOpenCodeProvider = ref<AgentProvider>('ccx')
 
 // Diff preview dialog state
 const diffDialogOpen = ref(false)
@@ -90,6 +94,11 @@ const claudeProviderLabel = (value?: string) => {
 }
 
 const codexProviderLabel = (value?: string) => {
+  if (!value) return '未识别'
+  return codexProviderLabels[value as AgentProvider | 'custom'] || value
+}
+
+const openCodeProviderLabel = (value?: string) => {
   if (!value) return '未识别'
   return codexProviderLabels[value as AgentProvider | 'custom'] || value
 }
@@ -138,6 +147,23 @@ const codexTargetBaseUrl = () => {
   }
 }
 
+const openCodeTargetBaseUrl = () => {
+  switch (selectedOpenCodeProvider.value) {
+    case 'ccx':
+      return agentStatuses.value.opencode?.targetBaseUrl || '当前 CCX 网关'
+    case 'openai':
+      return 'https://api.openai.com/v1'
+    case 'dashscope':
+      return 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+    case 'opencode-zen':
+      return 'https://opencode.ai/zen/v1'
+    case 'opencode-go':
+      return 'https://opencode.ai/zen/go/v1'
+    default:
+      return ''
+  }
+}
+
 const agentStatusText = (item: AgentConfigStatus | null) => {
   if (!item) return '检测中'
   if (item.configured) return '已配置'
@@ -173,12 +199,13 @@ const resolveDashScopePlan = (url: string): string => {
 const loadAgentStatuses = async () => {
   configLoading.value = true
   try {
-    const [claude, codex, keys] = await Promise.all([
+    const [claude, codex, opencode, keys] = await Promise.all([
       GetAgentConfigStatus('claude') as Promise<AgentConfigStatus>,
       GetAgentConfigStatus('codex') as Promise<AgentConfigStatus>,
+      GetAgentConfigStatus('opencode') as Promise<AgentConfigStatus>,
       GetSavedProviderKeys(),
     ])
-    agentStatuses.value = { claude, codex }
+    agentStatuses.value = { claude, codex, opencode }
     savedProviderKeys.value = Object.fromEntries(
       Object.entries(keys).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
     )
@@ -196,6 +223,11 @@ const loadAgentStatuses = async () => {
       selectedCodexProvider.value = codex.provider as AgentProvider
     } else {
       selectedCodexProvider.value = 'ccx'
+    }
+    if (opencode.provider && opencode.provider !== 'ccx' && opencode.provider !== '') {
+      selectedOpenCodeProvider.value = opencode.provider as AgentProvider
+    } else {
+      selectedOpenCodeProvider.value = 'ccx'
     }
   } catch (error) {
     // error is handled by caller
@@ -222,6 +254,14 @@ const canApplyAgent = (platform: AgentPlatform) => {
     // 第三方 provider 必须有输入的 key 或已保存的 key
     const inputKey = codexOpenAIKey.value.trim()
     const hasSaved = !!savedProviderKeys.value[`codex:${selectedCodexProvider.value}`]
+    return inputKey !== '' || hasSaved
+  }
+  if (platform === 'opencode') {
+    if (selectedOpenCodeProvider.value === 'ccx') {
+      return true
+    }
+    const inputKey = openCodeOpenAIKey.value.trim()
+    const hasSaved = !!savedProviderKeys.value[`codex:${selectedOpenCodeProvider.value}`]
     return inputKey !== '' || hasSaved
   }
   if (selectedClaudeProvider.value === 'ccx') return true
@@ -261,6 +301,13 @@ const applyAgent = async (platform: AgentPlatform) => {
         request.apiKey = inputKey || savedProviderKeys.value[`codex:${selectedCodexProvider.value}`] || ''
       }
     }
+    if (platform === 'opencode') {
+      request.provider = selectedOpenCodeProvider.value
+      if (selectedOpenCodeProvider.value !== 'ccx') {
+        const inputKey = openCodeOpenAIKey.value.trim()
+        request.apiKey = inputKey || savedProviderKeys.value[`codex:${selectedOpenCodeProvider.value}`] || ''
+      }
+    }
     await ApplyAgentConfig(request)
     await loadAgentStatuses()
   } finally {
@@ -288,6 +335,13 @@ const showApplyPreview = async (platform: AgentPlatform) => {
     if (selectedCodexProvider.value !== 'ccx') {
       const inputKey = codexOpenAIKey.value.trim()
       request.apiKey = inputKey || savedProviderKeys.value[`codex:${selectedCodexProvider.value}`] || ''
+    }
+  }
+  if (platform === 'opencode') {
+    request.provider = selectedOpenCodeProvider.value
+    if (selectedOpenCodeProvider.value !== 'ccx') {
+      const inputKey = openCodeOpenAIKey.value.trim()
+      request.apiKey = inputKey || savedProviderKeys.value[`codex:${selectedOpenCodeProvider.value}`] || ''
     }
   }
   diffPendingPlatform.value = platform
@@ -350,6 +404,7 @@ export function useAgentConfig() {
     claudeProviderKeys,
     savedProviderKeys,
     codexOpenAIKey,
+    openCodeOpenAIKey,
     claudeMimoBaseUrl,
     selectedMimoPlan,
     selectedDashScopePlan,
@@ -367,8 +422,11 @@ export function useAgentConfig() {
     applyAgent,
     restoreAgent,
     selectedCodexProvider,
+    selectedOpenCodeProvider,
     codexProviderLabel,
     codexTargetBaseUrl,
+    openCodeProviderLabel,
+    openCodeTargetBaseUrl,
     // Diff preview
     diffDialogOpen,
     diffResult,

@@ -27,7 +27,7 @@ export type DesktopStatus = {
   logs: string[]
 }
 
-export type AgentPlatform = 'claude' | 'codex'
+export type AgentPlatform = 'claude' | 'codex' | 'opencode'
 export type AgentProvider = 'ccx' | 'deepseek' | 'mimo' | 'compshare' | 'kimi' | 'glm' | 'minimax' | 'dashscope' | 'opencode-zen' | 'opencode-go' | 'openai'
 
 export type AgentConfigStatus = {

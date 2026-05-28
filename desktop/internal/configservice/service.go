@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	PlatformClaude = "claude"
-	PlatformCodex  = "codex"
+	PlatformClaude   = "claude"
+	PlatformCodex    = "codex"
+	PlatformOpenCode = "opencode"
 
 	ProviderCCX         = "ccx"
 	ProviderDeepSeek    = "deepseek"
@@ -38,6 +39,9 @@ const (
 	openCodeZenClaudeBaseURL         = "https://opencode.ai/zen"
 	openCodeGoClaudeBaseURL          = "https://opencode.ai/zen/go"
 	stateVersion                     = 1
+
+	openCodeZenBaseURL = "https://opencode.ai/zen/v1"
+	openCodeGoBaseURL  = "https://opencode.ai/zen/go/v1"
 )
 
 type AgentConfigStatus struct {
@@ -145,6 +149,8 @@ func (s *Service) GetStatus(platform string, port int) (AgentConfigStatus, error
 		return s.getClaudeStatus(port)
 	case PlatformCodex:
 		return s.getCodexStatus(port)
+	case PlatformOpenCode:
+		return s.getOpenCodeStatus(port)
 	default:
 		return AgentConfigStatus{}, fmt.Errorf("不支持的 agent 平台: %s", platform)
 	}
@@ -173,6 +179,8 @@ func (s *Service) Apply(req ApplyAgentConfigRequest, port int, accessKey string)
 			return fmt.Errorf("PROXY_ACCESS_KEY 为空")
 		}
 		return s.applyCodex(port, accessKey)
+	case PlatformOpenCode:
+		return s.applyOpenCode(req, port, accessKey)
 	default:
 		return fmt.Errorf("不支持的 agent 平台: %s", platform)
 	}
@@ -272,6 +280,8 @@ func (s *Service) Restore(platform string) error {
 		return s.restoreClaude()
 	case PlatformCodex:
 		return s.restoreCodex()
+	case PlatformOpenCode:
+		return s.restoreOpenCode()
 	default:
 		return fmt.Errorf("不支持的 agent 平台: %s", platform)
 	}
@@ -673,6 +683,47 @@ func (s *Service) codexStatePath() string {
 
 func (s *Service) providerKeysPath() string {
 	return filepath.Join(s.stateDir, "provider-keys.json")
+}
+
+type OpenCodeProxyState struct {
+	Version              int     `json:"version"`
+	ProviderID           string  `json:"providerId"`
+	ConfigPath           string  `json:"configPath"`
+	AuthPath             string  `json:"authPath"`
+	ConfigFileExisted    bool    `json:"configFileExisted"`
+	AuthFileExisted      bool    `json:"authFileExisted"`
+	OriginalProviderJSON *string `json:"originalProviderJson,omitempty"`
+	OriginalAuthType     *string `json:"originalAuthType,omitempty"`
+	OriginalAuthKey      *string `json:"originalAuthKey,omitempty"`
+	InjectedBaseURL      string  `json:"injectedBaseUrl"`
+	InjectedAPIKey       string  `json:"injectedApiKey"`
+}
+
+func (s *Service) openCodeConfigPath() string {
+	return filepath.Join(s.homeDir, ".config", "opencode", "opencode.jsonc")
+}
+
+func (s *Service) openCodeAuthPath() string {
+	if dir := strings.TrimSpace(os.Getenv("XDG_DATA_HOME")); dir != "" {
+		return filepath.Join(dir, "opencode", "auth.json")
+	}
+	return filepath.Join(s.homeDir, ".local", "share", "opencode", "auth.json")
+}
+
+func (s *Service) openCodeStatePath() string {
+	return filepath.Join(s.stateDir, "opencode.json")
+}
+
+func (s *Service) readOpenCodeState() (OpenCodeProxyState, bool) {
+	var state OpenCodeProxyState
+	if err := readJSONFile(s.openCodeStatePath(), &state); err != nil {
+		return OpenCodeProxyState{}, false
+	}
+	return state, true
+}
+
+func (s *Service) writeOpenCodeState(state OpenCodeProxyState) error {
+	return writeJSONAtomic(s.openCodeStatePath(), state)
 }
 
 func (s *Service) readProviderKeyStore() ProviderKeyStore {
@@ -1242,6 +1293,8 @@ func (s *Service) PreviewApply(req ApplyAgentConfigRequest, port int, accessKey 
 			return s.previewApplyCodexThirdParty(provider, responsesURL, req.APIKey)
 		}
 		return s.previewApplyCodex(port, accessKey)
+	case PlatformOpenCode:
+		return s.previewApplyOpenCode(req, port, accessKey)
 	default:
 		return ConfigDiffResult{}, fmt.Errorf("不支持的 agent 平台: %s", platform)
 	}
@@ -1254,6 +1307,8 @@ func (s *Service) PreviewRestore(platform string) (ConfigDiffResult, error) {
 		return s.previewRestoreClaude()
 	case PlatformCodex:
 		return s.previewRestoreCodex()
+	case PlatformOpenCode:
+		return s.previewRestoreOpenCode()
 	default:
 		return ConfigDiffResult{}, fmt.Errorf("不支持的 agent 平台: %s", platform)
 	}
@@ -1516,4 +1571,590 @@ func copyJSONMap(data map[string]any) map[string]any {
 	var result map[string]any
 	_ = json.Unmarshal(b, &result)
 	return result
+}
+
+
+
+
+func findJSONCStringValue(content string, key string) (string, bool) {
+	re := regexp.MustCompile(`(?m)^(\s*)` + `"` + regexp.QuoteMeta(key) + `"` + `\s*:\s*\"([^\"\\]*(?:\\.[^\"\\]*)*)\"`)
+	m := re.FindStringSubmatch(content)
+	if len(m) < 3 {
+		return "", false
+	}
+	return m[2], true
+}
+
+
+func extractJSONObjectRange(content string, key string) (int, int, bool) {
+	re := regexp.MustCompile(`(?m)^(\s*)` + `"` + regexp.QuoteMeta(key) + `"` + `\s*:\s*\{`)
+	loc := re.FindStringIndex(content)
+	if loc == nil {
+		return 0, 0, false
+	}
+	start := loc[0]
+	pos := strings.IndexByte(content[start:], '{')
+	if pos < 0 {
+		return 0, 0, false
+	}
+	pos += start
+	depth := 0
+	inString := false
+	inLineComment := false
+	inBlockComment := false
+	escaped := false
+	i := pos
+	for i < len(content) {
+		ch := content[i]
+		if inLineComment {
+			if ch == '\n' {
+				inLineComment = false
+			}
+			i++
+			continue
+		}
+		if inBlockComment {
+			if ch == '*' && i+1 < len(content) && content[i+1] == '/' {
+				inBlockComment = false
+				i += 2
+				continue
+			}
+			i++
+			continue
+		}
+		if inString {
+			if escaped {
+				escaped = false
+				i++
+				continue
+			}
+			if ch == '\\' {
+				escaped = true
+				i++
+				continue
+			}
+			if ch == '"' {
+				inString = false
+			}
+			i++
+			continue
+		}
+		if ch == '/' && i+1 < len(content) {
+			next := content[i+1]
+			if next == '/' {
+				inLineComment = true
+				i += 2
+				continue
+			}
+			if next == '*' {
+				inBlockComment = true
+				i += 2
+				continue
+			}
+		}
+		if ch == '"' {
+			inString = true
+			i++
+			continue
+		}
+		if ch == '{' {
+			depth++
+			i++
+			continue
+		}
+		if ch == '}' {
+			depth--
+			if depth == 0 {
+				return start, i + 1, true
+			}
+			i++
+			continue
+		}
+		i++
+	}
+	return 0, 0, false
+}
+
+func extractJSONObjectString(content string, key string) (string, bool) {
+	start, end, ok := extractJSONObjectRange(content, key)
+	if !ok {
+		return "", false
+	}
+	return strings.TrimRight(content[start:end], "\n"), true
+}
+
+func ensureJSONObjectKey(content string, parentKey string, childKey string, childJSON string) string {
+	parentStart, parentEnd, ok := extractJSONObjectRange(content, parentKey)
+	if !ok {
+		block := fmt.Sprintf("  %q: %s", parentKey, childJSON)
+		if idx := strings.LastIndex(content, "}"); idx >= 0 {
+			head := content[:idx]
+			tail := content[idx:]
+			if strings.TrimSpace(head) != "" && !strings.HasSuffix(strings.TrimRight(head, " \t\r\n"), ",") && !strings.HasSuffix(strings.TrimRight(head, " \t\r\n"), "{") {
+				head = strings.TrimRight(head, " \t\r\n") + ","
+			}
+			if !strings.HasSuffix(head, "\n") {
+				head += "\n"
+			}
+			return head + block + "\n" + tail
+		}
+		if strings.TrimSpace(content) == "" {
+			return "{\n" + block + "\n}"
+		}
+		if !strings.HasSuffix(content, "\n") {
+			return content + "\n" + block + "\n"
+		}
+		return content + block + "\n"
+	}
+	childStart, childEnd, childOK := extractJSONObjectRange(content[parentStart:parentEnd], childKey)
+	if childOK {
+		absoluteStart := parentStart + childStart
+		absoluteEnd := parentStart + childEnd
+		return content[:absoluteStart] + childJSON + content[absoluteEnd:]
+	}
+	parentInner := content[parentStart:parentEnd]
+	childBlock := fmt.Sprintf("  %q: %s", childKey, childJSON)
+	insertPos := strings.LastIndex(parentInner, "}")
+	if insertPos < 0 {
+		return content
+	}
+	absInsert := parentStart + insertPos
+	head := content[:absInsert]
+	tail := content[absInsert:]
+	if strings.TrimSpace(head) != "" && !strings.HasSuffix(strings.TrimRight(head, " \t\r\n"), ",") && !strings.HasSuffix(strings.TrimRight(head, " \t\r\n"), "{") {
+		head = strings.TrimRight(head, " \t\r\n") + ","
+	}
+	if !strings.HasSuffix(head, "\n") {
+		head += "\n"
+	}
+	return head + childBlock + "\n" + tail
+}
+
+func patchOpenCodeProviderJSONC(content string, providerID string, providerJSON string) string {
+	return ensureJSONObjectKey(content, "provider", providerID, providerJSON)
+}
+
+func removeJSONCObjectKey(content string, key string) string {
+	re := regexp.MustCompile(`(?m)^(\s*)` + `"` + regexp.QuoteMeta(key) + `"` + `\s*:\s*\{`)
+	loc := re.FindStringIndex(content)
+	if loc == nil {
+		return content
+	}
+	start, end, ok := extractJSONObjectRange(content, key)
+	if !ok {
+		return content
+	}
+	if end < len(content) && content[end] == ',' {
+		end++
+	}
+	if start > 0 && content[start-1] == ',' {
+		start--
+	}
+	if start > 0 && (content[start-1] == '\n' || content[start-1] == '\r') {
+		start--
+		if start > 0 && content[start-1] == '\r' {
+			start--
+		}
+	}
+	if end < len(content) && (content[end] == '\n' || content[end] == '\r') {
+		end++
+	}
+	return content[:start] + content[end:]
+}
+
+func openCodeAuthKeyFromMap(authData map[string]any, provider string) (string, string) {
+	obj, _ := authData[provider].(map[string]any)
+	if obj == nil {
+		return "", ""
+	}
+	authType, _ := obj["type"].(string)
+	key, _ := obj["key"].(string)
+	return authType, key
+}
+
+func upsertOpenCodeAuthKey(authData map[string]any, provider string, key string) map[string]any {
+	if authData == nil {
+		authData = map[string]any{}
+	}
+	existing, _ := authData[provider].(map[string]any)
+	if existing == nil {
+		existing = map[string]any{}
+	}
+	existing["type"] = "api"
+	existing["key"] = key
+	authData[provider] = existing
+	return authData
+}
+
+func restoreOpenCodeAuthKey(authData map[string]any, provider string, origType *string, origKey *string) map[string]any {
+	if authData == nil {
+		authData = map[string]any{}
+	}
+	if origType == nil && origKey == nil {
+		delete(authData, provider)
+		return authData
+	}
+	existing, _ := authData[provider].(map[string]any)
+	if existing == nil {
+		existing = map[string]any{}
+	}
+	if origType != nil {
+		existing["type"] = *origType
+	} else {
+		delete(existing, "type")
+	}
+	if origKey != nil {
+		existing["key"] = *origKey
+	} else {
+		delete(existing, "key")
+	}
+	authData[provider] = existing
+	return authData
+}
+
+func normalizeOpenCodeProvider(provider string) string {
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case "", ProviderCCX:
+		return ProviderCCX
+	case ProviderDeepSeek:
+		return ProviderDeepSeek
+	case ProviderMiMo:
+		return ProviderMiMo
+	case ProviderCompshare:
+		return ProviderCompshare
+	case ProviderKimi:
+		return ProviderKimi
+	case ProviderGLM:
+		return ProviderGLM
+	case ProviderMiniMax:
+		return ProviderMiniMax
+	case ProviderDashScope:
+		return ProviderDashScope
+	case ProviderOpenCodeZen:
+		return ProviderOpenCodeZen
+	case ProviderOpenCodeGo:
+		return ProviderOpenCodeGo
+	default:
+		return provider
+	}
+}
+
+func isOpenCodeDirectProvider(provider string) bool {
+	switch provider {
+	case ProviderDeepSeek, ProviderMiMo, ProviderCompshare, ProviderKimi, ProviderGLM, ProviderMiniMax, ProviderDashScope, ProviderOpenCodeZen, ProviderOpenCodeGo:
+		return true
+	default:
+		return false
+	}
+}
+
+func openCodeDirectBaseURL(provider string) (string, bool) {
+	switch provider {
+	case ProviderDeepSeek:
+		return "https://api.deepseek.com/v1", true
+	case ProviderMiMo:
+		return "https://api.xiaomimimo.com/v1", true
+	case ProviderCompshare:
+		return "https://cp.compshare.cn/v1", true
+	case ProviderKimi:
+		return "https://api.moonshot.cn/v1", true
+	case ProviderGLM:
+		return "https://open.bigmodel.cn/api/paas/v4", true
+	case ProviderMiniMax:
+		return "https://api.minimaxi.com/v1", true
+	case ProviderDashScope:
+		return "https://dashscope.aliyuncs.com/compatible-mode/v1", true
+	case ProviderOpenCodeZen:
+		return openCodeZenBaseURL, true
+	case ProviderOpenCodeGo:
+		return openCodeGoBaseURL, true
+	default:
+		return "", false
+	}
+}
+
+func openCodeDirectLabel(provider string) string {
+	switch provider {
+	case ProviderDeepSeek:
+		return "DeepSeek"
+	case ProviderMiMo:
+		return "MiMo"
+	case ProviderCompshare:
+		return "Compshare"
+	case ProviderKimi:
+		return "Kimi"
+	case ProviderGLM:
+		return "GLM"
+	case ProviderMiniMax:
+		return "MiniMax"
+	case ProviderDashScope:
+		return "DashScope"
+	case ProviderOpenCodeZen:
+		return "OpenCode Zen"
+	case ProviderOpenCodeGo:
+		return "OpenCode Go"
+	default:
+		return provider
+	}
+}
+
+func openCodeProviderBlockJSON(providerID string, label string, baseURL string) string {
+	var b strings.Builder
+	b.WriteString("{\n")
+	b.WriteString(fmt.Sprintf("      \"npm\": \"@ai-sdk/openai-compatible\",\n"))
+	b.WriteString(fmt.Sprintf("      \"name\": %q,\n", label))
+	b.WriteString("      \"options\": {\n")
+	b.WriteString(fmt.Sprintf("        \"baseURL\": %q\n", baseURL))
+	b.WriteString("      },\n")
+	b.WriteString("      \"models\": {}\n")
+	b.WriteString("    }")
+	return b.String()
+}
+
+func detectOpenCodeProvider(configContent string, providerID string) (string, string) {
+	if strings.TrimSpace(configContent) == "" || strings.TrimSpace(providerID) == "" {
+		return "", ""
+	}
+	block, ok := extractJSONObjectString(configContent, providerID)
+	if !ok {
+		return "", ""
+	}
+	baseURL, _ := findJSONCStringValue(block, "baseURL")
+	return baseURL, providerID
+}
+
+func resolveOpenCodeProvider(req ApplyAgentConfigRequest, port int, accessKey string) (string, string, string, string, string, error) {
+	provider := normalizeOpenCodeProvider(req.Provider)
+	switch provider {
+	case ProviderCCX:
+		if port == 0 {
+			return "", "", "", "", "", fmt.Errorf("CCX 端口未设置")
+		}
+		if accessKey == "" {
+			return "", "", "", "", "", fmt.Errorf("PROXY_ACCESS_KEY 为空")
+		}
+		return ProviderCCX, ProviderCCX, codexBaseURL(port), accessKey, ProviderCCX, nil
+	default:
+		if !isOpenCodeDirectProvider(provider) {
+			return "", "", "", "", "", fmt.Errorf("不支持的 OpenCode provider: %s", provider)
+		}
+		apiKey := strings.TrimSpace(req.APIKey)
+		if apiKey == "" {
+			return "", "", "", "", "", fmt.Errorf("%s API Key 不能为空", provider)
+		}
+		baseURL, ok := openCodeDirectBaseURL(provider)
+		if !ok {
+			return "", "", "", "", "", fmt.Errorf("%s 缺少 OpenCode Base URL", provider)
+		}
+		return provider, provider, baseURL, apiKey, provider, nil
+	}
+}
+
+func (s *Service) getOpenCodeStatus(port int) (AgentConfigStatus, error) {
+	configPath := s.openCodeConfigPath()
+	authPath := s.openCodeAuthPath()
+	target := codexBaseURL(port)
+	status := AgentConfigStatus{
+		Platform:       PlatformOpenCode,
+		Provider:       ProviderCCX,
+		TargetProvider: ProviderCCX,
+		TargetBaseURL:  target,
+		ConfigPath:     configPath,
+		AuthPath:       authPath,
+		HasState:       fileExists(s.openCodeStatePath()),
+	}
+	if existing, ok := s.readOpenCodeState(); ok {
+		status.Provider = existing.ProviderID
+		if existing.ProviderID != ProviderCCX {
+			status.TargetProvider = existing.ProviderID
+		}
+	}
+	configContent, configExists, err := readTextFile(configPath)
+	if err != nil {
+		status.LastError = err.Error()
+		return status, nil
+	}
+	authData, _, err := readJSONMap(authPath)
+	if err != nil {
+		status.LastError = err.Error()
+		return status, nil
+	}
+	providerID := status.Provider
+	if providerID == "" {
+		providerID = ProviderCCX
+	}
+	baseURL, _ := detectOpenCodeProvider(configContent, providerID)
+	_, authKey := openCodeAuthKeyFromMap(authData, providerID)
+	status.CurrentBaseURL = baseURL
+	if providerID == ProviderCCX {
+		status.TargetBaseURL = target
+	} else if wantURL, ok := openCodeDirectBaseURL(providerID); ok {
+		status.TargetBaseURL = wantURL
+	} else {
+		status.TargetBaseURL = ""
+	}
+	envAccessKey := strings.TrimSpace(os.Getenv("PROXY_ACCESS_KEY"))
+	if providerID == ProviderCCX {
+		status.Configured = configExists && baseURL == target && strings.TrimSpace(authKey) != "" && envAccessKey != "" && strings.TrimSpace(authKey) == envAccessKey
+		status.MatchesCurrentPort = status.Configured
+		status.NeedsUpdate = configExists && (isLocalBaseURL(baseURL) || strings.TrimSpace(authKey) != "") && !status.MatchesCurrentPort
+	} else {
+		status.Configured = configExists && baseURL != "" && strings.TrimSpace(authKey) != ""
+		status.MatchesCurrentPort = status.Configured
+		status.NeedsUpdate = configExists && (isLocalBaseURL(baseURL) || strings.TrimSpace(authKey) != "") && !status.MatchesCurrentPort
+	}
+	return status, nil
+}
+
+func (s *Service) applyOpenCode(req ApplyAgentConfigRequest, port int, accessKey string) error {
+	providerID, providerLabel, targetURL, apiKey, storedProvider, err := resolveOpenCodeProvider(req, port, accessKey)
+	if err != nil {
+		return err
+	}
+	configPath := s.openCodeConfigPath()
+	authPath := s.openCodeAuthPath()
+	configContent, configExisted, err := readTextFile(configPath)
+	if err != nil {
+		return err
+	}
+	authData, authExisted, err := readJSONMap(authPath)
+	if err != nil {
+		return err
+	}
+	origProviderJSON, _ := extractJSONObjectString(configContent, providerID)
+	origAuthType, origAuthKey := openCodeAuthKeyFromMap(authData, providerID)
+	state := OpenCodeProxyState{
+		Version:              stateVersion,
+		ProviderID:           storedProvider,
+		ConfigPath:           configPath,
+		AuthPath:             authPath,
+		ConfigFileExisted:    configExisted,
+		AuthFileExisted:      authExisted,
+		OriginalProviderJSON: optionalString(origProviderJSON, origProviderJSON != ""),
+		OriginalAuthType:     optionalString(origAuthType, origAuthType != ""),
+		OriginalAuthKey:      optionalString(origAuthKey, origAuthKey != ""),
+		InjectedBaseURL:      targetURL,
+		InjectedAPIKey:       apiKey,
+	}
+	if existing, ok := s.readOpenCodeState(); ok {
+		state.ConfigFileExisted = existing.ConfigFileExisted
+		state.AuthFileExisted = existing.AuthFileExisted
+		if existing.OriginalProviderJSON != nil {
+			state.OriginalProviderJSON = existing.OriginalProviderJSON
+		}
+		if existing.OriginalAuthType != nil {
+			state.OriginalAuthType = existing.OriginalAuthType
+		}
+		if existing.OriginalAuthKey != nil {
+			state.OriginalAuthKey = existing.OriginalAuthKey
+		}
+	}
+	if err := s.writeOpenCodeState(state); err != nil {
+		return err
+	}
+	providerJSON := openCodeProviderBlockJSON(providerID, providerLabel, targetURL)
+	updatedConfig := patchOpenCodeProviderJSONC(configContent, providerID, providerJSON)
+	if err := writeTextAtomic(configPath, updatedConfig); err != nil {
+		return err
+	}
+	authData = upsertOpenCodeAuthKey(authData, providerID, apiKey)
+	return writeJSONAtomic(authPath, authData)
+}
+
+func (s *Service) restoreOpenCode() error {
+	var state OpenCodeProxyState
+	if err := readJSONFile(s.openCodeStatePath(), &state); err != nil {
+		return err
+	}
+	if state.ConfigFileExisted {
+		content, _, err := readTextFile(state.ConfigPath)
+		if err != nil {
+			return err
+		}
+		if state.OriginalProviderJSON != nil {
+			content = patchOpenCodeProviderJSONC(content, state.ProviderID, *state.OriginalProviderJSON)
+		} else {
+			content = removeJSONCObjectKey(content, state.ProviderID)
+		}
+		if err := writeTextAtomic(state.ConfigPath, content); err != nil {
+			return err
+		}
+	} else if err := os.Remove(state.ConfigPath); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	if state.AuthFileExisted {
+		authData, _, err := readJSONMap(state.AuthPath)
+		if err != nil {
+			return err
+		}
+		authData = restoreOpenCodeAuthKey(authData, state.ProviderID, state.OriginalAuthType, state.OriginalAuthKey)
+		if err := writeJSONAtomic(state.AuthPath, authData); err != nil {
+			return err
+		}
+	} else if err := os.Remove(state.AuthPath); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return os.Remove(s.openCodeStatePath())
+}
+
+func (s *Service) previewApplyOpenCode(req ApplyAgentConfigRequest, port int, accessKey string) (ConfigDiffResult, error) {
+	providerID, providerLabel, targetURL, apiKey, _, err := resolveOpenCodeProvider(req, port, accessKey)
+	if err != nil {
+		return ConfigDiffResult{}, err
+	}
+	configPath := s.openCodeConfigPath()
+	authPath := s.openCodeAuthPath()
+	configContent, _, err := readTextFile(configPath)
+	if err != nil {
+		return ConfigDiffResult{}, err
+	}
+	authData, _, err := readJSONMap(authPath)
+	if err != nil {
+		return ConfigDiffResult{}, err
+	}
+	providerJSON := openCodeProviderBlockJSON(providerID, providerLabel, targetURL)
+	updatedConfig := patchOpenCodeProviderJSONC(configContent, providerID, providerJSON)
+	newAuth := copyJSONMap(authData)
+	newAuth = upsertOpenCodeAuthKey(newAuth, providerID, apiKey)
+	return ConfigDiffResult{Files: []FileDiff{
+		computeTextDiff(configPath, configContent, updatedConfig),
+		computeJSONDiffWithMask(authPath, authData, newAuth, "key"),
+	}}, nil
+}
+
+func (s *Service) previewRestoreOpenCode() (ConfigDiffResult, error) {
+	var state OpenCodeProxyState
+	if err := readJSONFile(s.openCodeStatePath(), &state); err != nil {
+		return ConfigDiffResult{}, fmt.Errorf("未找到 OpenCode 配置状态，请先应用配置")
+	}
+	var files []FileDiff
+	if state.ConfigFileExisted {
+		content, _, err := readTextFile(state.ConfigPath)
+		if err != nil {
+			return ConfigDiffResult{}, err
+		}
+		var restored string
+		if state.OriginalProviderJSON != nil {
+			restored = patchOpenCodeProviderJSONC(content, state.ProviderID, *state.OriginalProviderJSON)
+		} else {
+			restored = removeJSONCObjectKey(content, state.ProviderID)
+		}
+		files = append(files, computeTextDiff(state.ConfigPath, content, restored))
+	} else {
+		content, _, _ := readTextFile(state.ConfigPath)
+		files = append(files, computeTextDiff(state.ConfigPath, content, ""))
+	}
+	if state.AuthFileExisted {
+		authData, _, err := readJSONMap(state.AuthPath)
+		if err != nil {
+			return ConfigDiffResult{}, err
+		}
+		restoredAuth := copyJSONMap(authData)
+		restoredAuth = restoreOpenCodeAuthKey(restoredAuth, state.ProviderID, state.OriginalAuthType, state.OriginalAuthKey)
+		files = append(files, computeJSONDiffWithMask(state.AuthPath, authData, restoredAuth, "key"))
+	} else {
+		authData, _, _ := readJSONMap(state.AuthPath)
+		files = append(files, computeJSONDiffWithMask(state.AuthPath, authData, nil, "key"))
+	}
+	return ConfigDiffResult{Files: files}, nil
 }

@@ -33,7 +33,7 @@ const confirmLabel = computed(() =>
 )
 
 const platformLabel = computed(() =>
-  props.platform === 'claude' ? 'Claude Code' : 'Codex'
+  props.platform === 'claude' ? 'Claude Code' : props.platform === 'opencode' ? 'OpenCode' : 'Codex'
 )
 
 const actionLabel = (action: string) => {
