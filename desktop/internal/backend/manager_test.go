@@ -148,7 +148,7 @@ func TestFetchHealth(t *testing.T) {
 
 func TestSelectPort(t *testing.T) {
 	t.Run("first port available", func(t *testing.T) {
-		m := NewManager(Options{RootDir: t.TempDir(), DefaultPort: 19800})
+		m := NewManager(Options{RootDir: t.TempDir(), DataDir: t.TempDir(), DefaultPort: 19800})
 		port, err := m.selectPort(t.Context())
 		if err != nil {
 			t.Fatalf("selectPort failed: %v", err)
@@ -166,7 +166,7 @@ func TestSelectPort(t *testing.T) {
 		}
 		defer ln.Close()
 
-		m := NewManager(Options{RootDir: t.TempDir(), DefaultPort: 19850})
+		m := NewManager(Options{RootDir: t.TempDir(), DataDir: t.TempDir(), DefaultPort: 19850})
 		port, err := m.selectPort(t.Context())
 		if err != nil {
 			t.Fatalf("selectPort failed: %v", err)
@@ -185,7 +185,7 @@ func TestFindHealthyPort(t *testing.T) {
 		defer srv.Close()
 
 		port := srv.Listener.Addr().(*net.TCPAddr).Port
-		m := NewManager(Options{RootDir: t.TempDir(), DefaultPort: port})
+		m := NewManager(Options{RootDir: t.TempDir(), DataDir: t.TempDir(), DefaultPort: port})
 		found, ok := m.findHealthyPort(t.Context())
 		if !ok {
 			t.Fatal("expected to find healthy port")
@@ -196,7 +196,7 @@ func TestFindHealthyPort(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		m := NewManager(Options{RootDir: t.TempDir(), DefaultPort: 19900})
+		m := NewManager(Options{RootDir: t.TempDir(), DataDir: t.TempDir(), DefaultPort: 19900})
 		_, ok := m.findHealthyPort(t.Context())
 		if ok {
 			t.Error("should not find healthy port on unused port range")
@@ -452,7 +452,7 @@ func TestUniquePaths(t *testing.T) {
 }
 
 func TestLogs(t *testing.T) {
-	m := NewManager(Options{RootDir: t.TempDir()})
+	m := NewManager(Options{RootDir: t.TempDir(), DataDir: t.TempDir()})
 	logs := m.Logs()
 	if len(logs) != 0 {
 		t.Errorf("expected empty logs, got %d", len(logs))
@@ -460,7 +460,7 @@ func TestLogs(t *testing.T) {
 }
 
 func TestWebURL(t *testing.T) {
-	m := NewManager(Options{RootDir: t.TempDir(), DefaultPort: 7777})
+	m := NewManager(Options{RootDir: t.TempDir(), DataDir: t.TempDir(), DefaultPort: 7777})
 	if got := m.WebURL(); got != "http://127.0.0.1:7777" {
 		t.Errorf("WebURL = %q, want %q", got, "http://127.0.0.1:7777")
 	}
@@ -475,7 +475,7 @@ func TestDataDir(t *testing.T) {
 }
 
 func TestCurrentPort(t *testing.T) {
-	m := NewManager(Options{RootDir: t.TempDir(), DefaultPort: 5555})
+	m := NewManager(Options{RootDir: t.TempDir(), DataDir: t.TempDir(), DefaultPort: 5555})
 	if m.CurrentPort() != 5555 {
 		t.Errorf("CurrentPort = %d, want 5555", m.CurrentPort())
 	}
