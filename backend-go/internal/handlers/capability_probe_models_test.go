@@ -17,7 +17,7 @@ func TestGetCapabilityProbeModel(t *testing.T) {
 	}{
 		{protocol: "messages", want: "claude-opus-4-8"},
 		{protocol: "chat", want: "gpt-5.5"},
-		{protocol: "gemini", want: "gemini-3.1-pro-preview"},
+		{protocol: "gemini", want: "gemini-3.5-flash"},
 		{protocol: "responses", want: "gpt-5.5"},
 		{protocol: "unknown", wantErr: true},
 	}
@@ -63,8 +63,8 @@ func TestBuildTestRequest_UsesCentralizedProbeModels(t *testing.T) {
 		},
 		{
 			protocol:      "gemini",
-			expectedURL:   "https://api.example.com/v1beta/models/gemini-3.1-pro-preview:streamGenerateContent?alt=sse",
-			expectedModel: "gemini-3.1-pro-preview",
+			expectedURL:   "https://api.example.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse",
+			expectedModel: "gemini-3.5-flash",
 			modelInURL:    true,
 		},
 		{
@@ -140,7 +140,7 @@ func TestBuildTestRequest_UsesExistingVersionSuffix(t *testing.T) {
 			name:        "gemini with v1beta base url",
 			protocol:    "gemini",
 			baseURL:     "https://api.example.com/codex/v1beta",
-			expectedURL: "https://api.example.com/codex/v1beta/models/gemini-3.1-pro-preview:streamGenerateContent?alt=sse",
+			expectedURL: "https://api.example.com/codex/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse",
 		},
 		{
 			name:        "responses with explicit skip marker",
