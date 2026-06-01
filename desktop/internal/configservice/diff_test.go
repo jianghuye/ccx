@@ -339,6 +339,38 @@ func TestComputeJSONDiffWithMask_SensitiveValueChanged(t *testing.T) {
 	}
 }
 
+func TestComputeJSONDiffWithMask_ShortSensitiveValueChanged(t *testing.T) {
+	old := map[string]any{
+		"OPENAI_API_KEY": "old",
+		"auth_mode":      "apikey",
+	}
+	new := map[string]any{
+		"OPENAI_API_KEY": "new",
+		"auth_mode":      "apikey",
+	}
+	result := computeJSONDiffWithMask("auth.json", old, new, "OPENAI_API_KEY")
+
+	hasRemoved := false
+	hasAdded := false
+	for _, l := range result.Lines {
+		if l.Type == "removed" {
+			hasRemoved = true
+		}
+		if l.Type == "added" {
+			hasAdded = true
+		}
+		if strings.Contains(l.Content, `"old"`) || strings.Contains(l.Content, `"new"`) {
+			t.Errorf("diff content should not expose raw short sensitive value: %q", l.Content)
+		}
+	}
+	if !hasRemoved || !hasAdded {
+		t.Errorf("short sensitive value changed but diff missed it: removed=%v added=%v", hasRemoved, hasAdded)
+		for _, l := range result.Lines {
+			t.Logf("  %s: %s", l.Type, l.Content)
+		}
+	}
+}
+
 func TestComputeJSONDiffWithMask_ShortValueNoSubstringLeak(t *testing.T) {
 	// PROXY_ACCESS_KEY 可能是极短字符串（如 "key"），文本级 ReplaceAll 会误伤
 	// 同一文件里的其它字段值（如 auth_mode="apikey" 中的 "key" 子串）。

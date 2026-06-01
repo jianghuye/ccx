@@ -124,18 +124,21 @@ func maskTextSensitiveValues(content string, keyValues map[string]string) string
 	return result
 }
 
-// computeJSONDiffWithMask 在原始数据上计算 diff（正确识别变更），
-// 再对展示内容进行脱敏。敏感字段值虽均掩码为 "***"，但 diff 类型
-// （removed/added）基于原始值判定，用户仍能感知到变更。
+// computeJSONDiffWithMask 用原始数据判定变更类型（removed/added），
+// 用字段级掩码后的数据做展示，避免两个不同密钥掩码后相同时漏报变更。
 func computeJSONDiffWithMask(path string, oldData, newData map[string]any, keys ...string) FileDiff {
+	oldRaw := formatJSON(oldData)
+	newRaw := formatJSON(newData)
 	if len(keys) == 0 {
-		return computeTextDiff(path, formatJSON(oldData), formatJSON(newData))
+		return computeTextDiff(path, oldRaw, newRaw)
 	}
-	// 在数据层按字段掩码敏感值（含嵌套 map），再序列化做普通文本 diff，
-	// 避免文本级 ReplaceAll 对短值（如 "key"）造成的子串误伤（如 auth_mode="apikey"）。
-	oldMasked := maskDataSensitiveKeys(oldData, keys)
-	newMasked := maskDataSensitiveKeys(newData, keys)
-	return computeTextDiff(path, formatJSON(oldMasked), formatJSON(newMasked))
+	// 字段级掩码只替换敏感字段的值、不改变 map 结构，
+	// 因此掩码后与原始 JSON 行数、字段顺序一致，可逐行对齐。
+	// 这样既避免文本级 ReplaceAll 对短值（如 "key"）的子串误伤（如 auth_mode="apikey"），
+	// 又保留用原始内容判定变更、用掩码内容展示的双轨机制。
+	oldMasked := formatJSON(maskDataSensitiveKeys(oldData, keys))
+	newMasked := formatJSON(maskDataSensitiveKeys(newData, keys))
+	return computeTextDiffFromMasked(path, oldRaw, newRaw, oldMasked, newMasked)
 }
 
 // maskDataSensitiveKeys 递归深拷贝 map，并对任意层级中命中 keys 的字符串值脱敏。
