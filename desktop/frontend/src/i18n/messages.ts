@@ -497,6 +497,45 @@ export type MessageKey =
   | 'console.capability.duration'
   | 'console.capability.protocolResults'
   | 'console.capability.compatible'
+  | 'capability.title'
+  | 'capability.loadingTitle'
+  | 'capability.startTest'
+  | 'capability.cancel'
+  | 'capability.cancelling'
+  | 'capability.cancelled'
+  | 'capability.partial'
+  | 'capability.noCompatibleProtocols'
+  | 'capability.modelQueued'
+  | 'capability.protocolRunning'
+  | 'capability.rpmLabel'
+  | 'capability.progressSummary'
+  | 'capability.supported'
+  | 'capability.unsupported'
+  | 'capability.table.protocol'
+  | 'capability.table.status'
+  | 'capability.table.successCount'
+  | 'capability.table.latency'
+  | 'capability.table.streaming'
+  | 'capability.table.actions'
+  | 'capability.copyToTab'
+  | 'capability.currentTab'
+  | 'capability.convert'
+  | 'capability.modelsLabel'
+  | 'capability.modelDetailsUnavailable'
+  | 'capability.tooltipLatency'
+  | 'capability.tooltipStreaming'
+  | 'capability.modelStatus'
+  | 'capability.actualModel'
+  | 'capability.retryModel'
+  | 'capability.testModel'
+  | 'capability.runMode.reusedRunning'
+  | 'capability.runMode.resumedCancelled'
+  | 'capability.runMode.cacheHit'
+  | 'capability.runMode.reusedPrevious'
+  | 'capability.lastResults'
+  | 'capability.noResults'
+  | 'capability.models'
+  | 'capability.duration'
   | 'console.logs.title'
   | 'console.logs.time'
   | 'console.logs.model'
@@ -1001,6 +1040,45 @@ export const messages: Record<SupportedLocale, Messages> = {
     'console.capability.duration': 'Duration',
     'console.capability.protocolResults': 'Protocol results',
     'console.capability.compatible': 'Compatible protocols',
+    'capability.title': 'Capability test',
+    'capability.loadingTitle': 'Testing protocol compatibility...',
+    'capability.startTest': 'Start test',
+    'capability.cancel': 'Cancel',
+    'capability.cancelling': 'Cancelling...',
+    'capability.cancelled': 'Cancelled',
+    'capability.partial': 'Partial',
+    'capability.noCompatibleProtocols': 'No compatible protocols',
+    'capability.modelQueued': 'Model queued',
+    'capability.protocolRunning': 'Protocol testing',
+    'capability.rpmLabel': 'RPM',
+    'capability.progressSummary': '{done}/{total} models finished',
+    'capability.supported': 'Supported',
+    'capability.unsupported': 'Unsupported',
+    'capability.table.protocol': 'Protocol',
+    'capability.table.status': 'Status',
+    'capability.table.successCount': 'Success',
+    'capability.table.latency': 'Latency',
+    'capability.table.streaming': 'SSE',
+    'capability.table.actions': 'Actions',
+    'capability.copyToTab': 'Copy to tab',
+    'capability.currentTab': 'Current tab',
+    'capability.convert': 'Convert',
+    'capability.modelsLabel': 'Models',
+    'capability.modelDetailsUnavailable': 'Model details unavailable',
+    'capability.tooltipLatency': 'Latency',
+    'capability.tooltipStreaming': 'Streaming',
+    'capability.modelStatus': 'Status',
+    'capability.actualModel': 'Actual model',
+    'capability.retryModel': 'Retry',
+    'capability.testModel': 'Test',
+    'capability.runMode.reusedRunning': 'Reused running',
+    'capability.runMode.resumedCancelled': 'Resumed cancelled',
+    'capability.runMode.cacheHit': 'Cache hit',
+    'capability.runMode.reusedPrevious': 'Reused previous',
+    'capability.lastResults': 'Last results',
+    'capability.noResults': 'No results yet',
+    'capability.models': 'models',
+    'capability.duration': 'Duration',
     'console.logs.title': 'Channel logs',
     'console.logs.time': 'Time',
     'console.logs.model': 'Model',
@@ -1502,6 +1580,45 @@ export const messages: Record<SupportedLocale, Messages> = {
     'console.capability.duration': '总耗时',
     'console.capability.protocolResults': '协议结果',
     'console.capability.compatible': '兼容协议',
+    'capability.title': '能力测试',
+    'capability.loadingTitle': '正在测试协议兼容性...',
+    'capability.startTest': '开始测试',
+    'capability.cancel': '取消',
+    'capability.cancelling': '取消中...',
+    'capability.cancelled': '已取消',
+    'capability.partial': '部分成功',
+    'capability.noCompatibleProtocols': '无兼容协议',
+    'capability.modelQueued': '模型排队中',
+    'capability.protocolRunning': '协议测试中',
+    'capability.rpmLabel': 'RPM',
+    'capability.progressSummary': '{done}/{total} 模型已完成',
+    'capability.supported': '支持',
+    'capability.unsupported': '不支持',
+    'capability.table.protocol': '协议',
+    'capability.table.status': '状态',
+    'capability.table.successCount': '成功',
+    'capability.table.latency': '延迟',
+    'capability.table.streaming': 'SSE',
+    'capability.table.actions': '操作',
+    'capability.copyToTab': '复制到当前 Tab',
+    'capability.currentTab': '当前 Tab',
+    'capability.convert': '转换',
+    'capability.modelsLabel': '模型',
+    'capability.modelDetailsUnavailable': '模型详情暂不可用',
+    'capability.tooltipLatency': '延迟',
+    'capability.tooltipStreaming': '流式',
+    'capability.modelStatus': '状态',
+    'capability.actualModel': '实际模型',
+    'capability.retryModel': '重试',
+    'capability.testModel': '测试',
+    'capability.runMode.reusedRunning': '复用运行',
+    'capability.runMode.resumedCancelled': '恢复取消',
+    'capability.runMode.cacheHit': '缓存命中',
+    'capability.runMode.reusedPrevious': '复用上次结果',
+    'capability.lastResults': '上次测试结果',
+    'capability.noResults': '尚未进行能力测试',
+    'capability.models': '模型',
+    'capability.duration': '总耗时',
     'console.logs.title': '频道日志',
     'console.logs.time': '时间',
     'console.logs.model': '模型',
