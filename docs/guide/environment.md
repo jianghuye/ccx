@@ -70,6 +70,22 @@ METRICS_WINDOW_SIZE=10                 # 滑动窗口大小（最小 3，默认 
 METRICS_FAILURE_THRESHOLD=0.5          # 失败率阈值（0-1，默认 0.5 即 50%）
 ```
 
+#### 命令行运行时路径
+
+命令行版支持用参数覆盖运行时路径，不传参数时仍保持默认行为：
+
+```bash
+ccx --config ~/.config/ccx/config.json --statedir ~/.local/state/ccx --logdir ~/.local/state/ccx/logs
+```
+
+- `--config PATH`：指定配置文件路径。
+- `--statedir DIR`：指定运行时状态目录；`metrics.db`、`conversation_state.json`、`scheduled_recovery_state.json` 会写入该目录，未指定时保持默认 `.config`。
+- `--logdir DIR`：指定日志目录；优先级高于 `LOG_DIR` 环境变量。
+- `--help`：查看完整命令行参数说明。
+- 路径中的 `~` / `~/...` 会按当前用户主目录展开。
+
+优先级：`--logdir` > `LOG_DIR` > 默认 `logs`。`--config` 不会隐式改变日志目录或状态目录。
+
 #### 日志等级说明
 
 项目采用标准的四级日志系统，等级从高到低：
@@ -562,7 +578,7 @@ ENABLE_RESPONSE_LOGS=false             # 是否记录响应日志
 QUIET_POLLING_LOGS=true                # 静默轮询日志
 
 # 轮转与存储定制
-LOG_DIR=logs                           # 自定义日志存储目录 (默认 logs)
+LOG_DIR=logs                           # 自定义日志存储目录 (默认 logs，可被 --logdir 覆盖)
 LOG_FILE=app.log                       # 自定义日志文件名 (默认 app.log)
 LOG_MAX_SIZE=100                       # 单个日志文件最大大小 (MB) (默认 100)
 LOG_MAX_BACKUPS=10                     # 保留的旧日志文件最大数量 (默认 10)

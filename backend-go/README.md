@@ -75,9 +75,17 @@ QUIET_POLLING_LOGS=true
 
 ### 运行时配置
 
-渠道与调度配置保存在：
+渠道与调度配置默认保存在：
 
 - `backend-go/.config/config.json`
+
+命令行版可以用 `--config` 指定配置文件位置，用 `--statedir` 指定运行时状态目录，用 `--logdir` 指定日志目录：
+
+```bash
+ccx --config ~/.config/ccx/config.json --statedir ~/.local/state/ccx --logdir ~/.local/state/ccx/logs
+```
+
+说明：`--config` 只改变配置文件位置；`--statedir` 会让 `metrics.db`、`conversation_state.json`、`scheduled_recovery_state.json` 写入指定目录，未指定时保持默认 `.config`；`--logdir` 只影响日志目录，优先级高于 `LOG_DIR` 环境变量。
 
 当前按渠道类型分组维护，例如：
 - `messagesUpstream`

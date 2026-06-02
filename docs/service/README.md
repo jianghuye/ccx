@@ -28,6 +28,21 @@ ENV=production
 LOG_LEVEL=warn
 ```
 
+如果希望按 XDG 习惯拆分配置与日志，可以在 service 的 `ExecStart` 中追加命令行参数，例如：
+
+```ini
+ExecStart=/opt/ccx/ccx-linux-amd64 --config /etc/ccx/config.json --statedir /var/lib/ccx --logdir /var/log/ccx
+```
+
+普通用户服务也可以使用用户目录，例如 `--config ~/.config/ccx/config.json --statedir ~/.local/state/ccx --logdir ~/.local/state/ccx/logs`。`--config` 只改变配置文件位置；`--statedir` 统一指定 `metrics.db`、`conversation_state.json`、`scheduled_recovery_state.json` 的目录，未指定时保持默认 `.config`；`--logdir` 只影响应用日志目录。
+
+对于 `ccx@.service` 这类用户级模板服务，可以把实例名用于区分配置目录：
+
+```ini
+ExecStart=/usr/local/bin/ccx --config %h/.config/ccx/%I/config.json --statedir %h/.local/state/ccx/%I --logdir %h/.local/state/ccx/%I/logs
+WorkingDirectory=%h/.local/state/ccx/%I/
+```
+
 设置目录权限：
 
 ```bash

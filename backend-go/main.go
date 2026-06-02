@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"embed"
+	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -33,20 +36,184 @@ import (
 //go:embed all:frontend/dist
 var frontendFS embed.FS
 
-func main() {
-	// 处理 --version / -v：打印版本信息后立即退出，不启动服务
-	if len(os.Args) > 1 {
-		switch os.Args[1] {
-		case "--version", "-v", "version":
-			fmt.Printf("ccx %s\n", Version)
-			if BuildTime != "unknown" {
-				fmt.Printf("build time: %s\n", BuildTime)
-			}
-			if GitCommit != "unknown" {
-				fmt.Printf("git commit: %s\n", GitCommit)
-			}
-			os.Exit(0)
+type cliAction int
+
+const (
+	cliActionRun cliAction = iota
+	cliActionHelp
+	cliActionVersion
+)
+
+const (
+	defaultConfigPath              = ".config/config.json"
+	defaultStateDir                = ".config"
+	metricsDBFile                  = "metrics.db"
+	conversationStateFile          = "conversation_state.json"
+	scheduledRecoveryStateFileName = "scheduled_recovery_state.json"
+)
+
+type cliOptions struct {
+	Action     cliAction
+	ConfigPath string
+	StateDir   string
+	LogDir     string
+}
+
+type runtimePaths struct {
+	ConfigPath                 string
+	StateDir                   string
+	MetricsDBPath              string
+	ConversationStatePath      string
+	ScheduledRecoveryStatePath string
+	LogDir                     string
+}
+
+func parseCLIArgs(args []string) (cliOptions, error) {
+	opts := cliOptions{Action: cliActionRun}
+	if len(args) == 1 && args[0] == "version" {
+		opts.Action = cliActionVersion
+		return opts, nil
+	}
+
+	fs := flag.NewFlagSet("ccx", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	fs.Usage = func() {}
+
+	showHelp := false
+	showVersion := false
+	fs.BoolVar(&showHelp, "help", false, "显示帮助")
+	fs.BoolVar(&showVersion, "version", false, "显示版本")
+	fs.BoolVar(&showVersion, "v", false, "显示版本")
+	fs.StringVar(&opts.ConfigPath, "config", "", "指定配置文件路径")
+	fs.StringVar(&opts.StateDir, "statedir", "", "指定运行时状态目录")
+	fs.StringVar(&opts.LogDir, "logdir", "", "指定日志目录")
+
+	if err := fs.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			opts.Action = cliActionHelp
+			return opts, nil
 		}
+		return opts, err
+	}
+	if fs.NArg() > 0 {
+		return opts, fmt.Errorf("未知参数: %s", strings.Join(fs.Args(), " "))
+	}
+	if showHelp {
+		opts.Action = cliActionHelp
+		return opts, nil
+	}
+	if showVersion {
+		opts.Action = cliActionVersion
+		return opts, nil
+	}
+	return opts, nil
+}
+
+func writeCLIHelp(out io.Writer) {
+	fmt.Fprint(out, `用法:
+  ccx [options]
+  ccx version
+
+选项:
+  --help, -h          显示帮助并退出
+  --version, -v       显示版本信息并退出
+  --config PATH       指定运行时配置文件路径，默认 .config/config.json
+  --statedir DIR      指定运行时状态目录，默认 .config
+  --logdir DIR        指定日志目录，优先级高于 LOG_DIR，默认 logs
+
+示例:
+  ccx --config ~/.config/ccx/config.json --statedir ~/.local/state/ccx --logdir ~/.local/state/ccx/logs
+
+说明:
+  --config 只改变配置文件位置。
+  --statedir 会让 metrics.db、conversation_state.json、scheduled_recovery_state.json
+  写入指定目录；不指定时保持默认 .config。
+  --logdir 只影响日志目录。
+`)
+}
+
+func printVersion(out io.Writer) {
+	fmt.Fprintf(out, "ccx %s\n", Version)
+	if BuildTime != "unknown" {
+		fmt.Fprintf(out, "build time: %s\n", BuildTime)
+	}
+	if GitCommit != "unknown" {
+		fmt.Fprintf(out, "git commit: %s\n", GitCommit)
+	}
+}
+
+func expandUserPath(path string) (string, error) {
+	if path == "" {
+		return "", nil
+	}
+	if path == "~" || strings.HasPrefix(path, "~/") {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("获取用户主目录失败: %w", err)
+		}
+		if path == "~" {
+			return filepath.Clean(homeDir), nil
+		}
+		return filepath.Clean(filepath.Join(homeDir, path[2:])), nil
+	}
+	if strings.HasPrefix(path, "~") {
+		return "", fmt.Errorf("不支持 ~otheruser 形式: %s", path)
+	}
+	return filepath.Clean(path), nil
+}
+
+func resolveRuntimePaths(opts cliOptions, envCfg *config.EnvConfig) (runtimePaths, error) {
+	configPath := defaultConfigPath
+	if opts.ConfigPath != "" {
+		expandedConfigPath, err := expandUserPath(opts.ConfigPath)
+		if err != nil {
+			return runtimePaths{}, fmt.Errorf("解析配置文件路径失败: %w", err)
+		}
+		configPath = expandedConfigPath
+	}
+
+	stateDir := defaultStateDir
+	if opts.StateDir != "" {
+		expandedStateDir, err := expandUserPath(opts.StateDir)
+		if err != nil {
+			return runtimePaths{}, fmt.Errorf("解析运行时状态目录失败: %w", err)
+		}
+		stateDir = expandedStateDir
+	}
+
+	logDir := envCfg.LogDir
+	if opts.LogDir != "" {
+		expandedLogDir, err := expandUserPath(opts.LogDir)
+		if err != nil {
+			return runtimePaths{}, fmt.Errorf("解析日志目录失败: %w", err)
+		}
+		logDir = expandedLogDir
+	}
+
+	return runtimePaths{
+		ConfigPath:                 configPath,
+		StateDir:                   stateDir,
+		MetricsDBPath:              filepath.Join(stateDir, metricsDBFile),
+		ConversationStatePath:      filepath.Join(stateDir, conversationStateFile),
+		ScheduledRecoveryStatePath: filepath.Join(stateDir, scheduledRecoveryStateFileName),
+		LogDir:                     logDir,
+	}, nil
+}
+
+func main() {
+	cliOpts, err := parseCLIArgs(os.Args[1:])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "参数错误: %v\n\n", err)
+		writeCLIHelp(os.Stderr)
+		os.Exit(2)
+	}
+	switch cliOpts.Action {
+	case cliActionHelp:
+		writeCLIHelp(os.Stdout)
+		os.Exit(0)
+	case cliActionVersion:
+		printVersion(os.Stdout)
+		os.Exit(0)
 	}
 
 	// 加载环境变量
@@ -57,12 +224,17 @@ func main() {
 	// 设置版本信息到 handlers 包
 	handlers.SetVersionInfo(Version, BuildTime, GitCommit)
 
-	// 初始化配置管理器
+	// 初始化环境配置，并应用命令行运行时路径覆盖
 	envCfg := config.NewEnvConfig()
+	paths, err := resolveRuntimePaths(cliOpts, envCfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "解析运行时路径失败: %v\n", err)
+		os.Exit(2)
+	}
 
 	// 初始化日志系统（必须在其他初始化之前）
 	logCfg := &logger.Config{
-		LogDir:     envCfg.LogDir,
+		LogDir:     paths.LogDir,
 		LogFile:    envCfg.LogFile,
 		MaxSize:    envCfg.LogMaxSize,
 		MaxBackups: envCfg.LogMaxBackups,
@@ -74,7 +246,7 @@ func main() {
 		log.Fatalf("初始化日志系统失败: %v", err)
 	}
 
-	cfgManager, err := config.NewConfigManager(".config/config.json")
+	cfgManager, err := config.NewConfigManager(paths.ConfigPath)
 	if err != nil {
 		log.Fatalf("初始化配置管理器失败: %v", err)
 	}
@@ -93,7 +265,7 @@ func main() {
 	if envCfg.MetricsPersistenceEnabled {
 		var err error
 		metricsStore, err = metrics.NewSQLiteStore(&metrics.SQLiteStoreConfig{
-			DBPath:        ".config/metrics.db",
+			DBPath:        paths.MetricsDBPath,
 			RetentionDays: envCfg.MetricsRetentionDays,
 		})
 		if err != nil {
@@ -164,7 +336,7 @@ func main() {
 		messagesMetricsManager.GetFailureThreshold()*100, messagesMetricsManager.GetWindowSize(), messagesMetricsManager.GetConsecutiveRetryableFailuresThreshold())
 
 	// 初始化对话追踪器和覆盖管理器
-	conversationTracker := conversation.NewConversationTracker(1*time.Hour, 24*time.Hour, ".config/conversation_state.json")
+	conversationTracker := conversation.NewConversationTracker(1*time.Hour, 24*time.Hour, paths.ConversationStatePath)
 	overrideManager := conversation.NewOverrideManager(30 * time.Minute)
 	channelScheduler.SetConversationComponents(conversationTracker, overrideManager)
 	log.Printf("[Conversation-Init] 对话追踪器和覆盖管理器已初始化 (idle: 1h, expire: 2h, override TTL: 30m)")
@@ -199,12 +371,12 @@ func main() {
 		}
 
 		recordRecoveryCheck := func(checkedAt time.Time) {
-			if err := saveScheduledRecoveryLastCheck(scheduledRecoveryStateFile, checkedAt); err != nil {
+			if err := saveScheduledRecoveryLastCheck(paths.ScheduledRecoveryStatePath, checkedAt); err != nil {
 				log.Printf("[Scheduler-Recovery] 警告: 持久化恢复检查时间失败: %v", err)
 			}
 		}
 
-		lastRecoveryCheck, err := loadScheduledRecoveryLastCheck(scheduledRecoveryStateFile)
+		lastRecoveryCheck, err := loadScheduledRecoveryLastCheck(paths.ScheduledRecoveryStatePath)
 		if err != nil {
 			log.Printf("[Scheduler-Recovery] 警告: 读取恢复检查时间失败: %v", err)
 			lastRecoveryCheck = time.Time{}
@@ -595,6 +767,8 @@ func main() {
 	fmt.Printf("[Server-Info] Images Variations: POST /v1/images/variations\n")
 	fmt.Printf("[Server-Info] 健康检查: GET /health\n")
 	fmt.Printf("[Server-Info] 环境: %s\n", envCfg.Env)
+	fmt.Printf("[Server-Info] 配置文件: %s\n", paths.ConfigPath)
+	fmt.Printf("[Server-Info] 日志目录: %s\n", paths.LogDir)
 	// 生产环境检查：必须设置有效的访问密钥
 	if envCfg.IsProduction() && envCfg.ProxyAccessKey == "your-proxy-access-key" {
 		log.Fatal("[Server-Fatal] 生产环境必须设置 PROXY_ACCESS_KEY，禁止使用默认值")

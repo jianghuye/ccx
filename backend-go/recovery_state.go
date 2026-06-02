@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-const scheduledRecoveryStateFile = ".config/scheduled_recovery_state.json"
-
 type scheduledRecoveryState struct {
 	LastCheckUTC string `json:"lastCheckUtc,omitempty"`
 }

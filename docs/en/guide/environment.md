@@ -70,6 +70,22 @@ METRICS_WINDOW_SIZE=10                 # 滑动窗口大小（最小 3，默认 
 METRICS_FAILURE_THRESHOLD=0.5          # 失败率阈值（0-1，默认 0.5 即 50%）
 ```
 
+#### Command-line runtime paths
+
+The CLI binary supports runtime path overrides. Without these flags, CCX keeps the existing defaults:
+
+```bash
+ccx --config ~/.config/ccx/config.json --statedir ~/.local/state/ccx --logdir ~/.local/state/ccx/logs
+```
+
+- `--config PATH`: sets the runtime config file path.
+- `--statedir DIR`: sets the runtime state directory. `metrics.db`, `conversation_state.json`, and `scheduled_recovery_state.json` are written there; without this flag, CCX keeps the default `.config` directory.
+- `--logdir DIR`: sets the log directory. It has higher priority than the `LOG_DIR` environment variable.
+- `--help`: prints the complete CLI usage.
+- `~` / `~/...` paths are expanded to the current user's home directory.
+
+Priority: `--logdir` > `LOG_DIR` > default `logs`. `--config` does not implicitly change the log or state directory.
+
 #### 日志等级说明
 
 项目采用标准的四级日志系统，等级从高到低：
