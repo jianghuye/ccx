@@ -185,7 +185,7 @@ async function copyChannelInfo() {
 <template>
   <div
     :class="[
-      'group grid grid-cols-[42px_minmax(220px,1fr)_120px_96px_88px_150px] items-center gap-3 border px-3 py-2.5 transition-all duration-200',
+      'group grid grid-cols-[36px_minmax(170px,1fr)_110px_82px_74px_128px] items-center gap-1.5 border px-2 py-2 transition-all duration-200 xl:grid-cols-[42px_minmax(220px,1fr)_120px_96px_88px_150px] xl:gap-3 xl:px-3 xl:py-2.5',
       'bg-card/75 hover:bg-card dark:bg-card/55 dark:hover:bg-card/80',
       inactive ? 'border-dashed border-border/80 opacity-80' : 'border-border',
       circuitDisplay ? 'ring-1 ring-rose-500/20' : '',
@@ -254,25 +254,25 @@ async function copyChannelInfo() {
     </div>
 
     <div class="space-y-0.5 text-right font-mono">
-      <div class="text-xs font-bold text-foreground">{{ rpmDisplay }} / {{ tpmDisplay }}</div>
+      <div class="text-[11px] font-bold text-foreground xl:text-xs">{{ rpmDisplay }} / {{ tpmDisplay }}</div>
       <div class="text-[10px] text-muted-foreground">RPM / TPM</div>
     </div>
 
     <div class="space-y-0.5 text-right font-mono">
-      <div class="text-xs font-bold text-foreground">{{ requestDisplay }}</div>
+      <div class="text-[11px] font-bold text-foreground xl:text-xs">{{ requestDisplay }}</div>
       <div class="text-[10px] text-muted-foreground">{{ successRateDisplay }}</div>
     </div>
 
-    <div class="flex items-center justify-end gap-1.5">
-      <Button v-if="isDisabled" variant="outline" size="sm" @click="emit('enable')">
+    <div class="flex items-center justify-end gap-1">
+      <Button v-if="isDisabled" variant="outline" size="sm" class="px-2 text-xs xl:px-3" @click="emit('enable')">
         <Play class="h-3.5 w-3.5" />
         {{ tf('console.actions.enable', 'Enable') }}
       </Button>
-      <Button v-else-if="isSuspended" variant="outline" size="sm" @click="emit('status')">
+      <Button v-else-if="isSuspended" variant="outline" size="sm" class="px-2 text-xs xl:px-3" @click="emit('status')">
         <Play class="h-3.5 w-3.5" />
         {{ tf('console.actions.resume', 'Resume') }}
       </Button>
-      <Button v-else variant="outline" size="sm" @click="emit('status')">
+      <Button v-else variant="outline" size="sm" class="px-2 text-xs xl:px-3" @click="emit('status')">
         <Pause class="h-3.5 w-3.5" />
         {{ tf('console.actions.suspend', 'Suspend') }}
       </Button>
