@@ -43,7 +43,7 @@ const protocolTabs: { value: ManagedChannelType; label: string }[] = [
   { value: 'gemini', label: 'Gemini' },
 ]
 
-// 管理控制台的顶级 tab：频道管理 vs 会话管理
+// 管理控制台的顶级 tab：频道管理 vs 驾驶舱
 const consoleTab = ref<'channels' | 'conversations'>(consoleSelectionSection(props.selection))
 
 
@@ -124,7 +124,7 @@ watch(() => status.value.running, (running) => {
               {{ tf('console.channelsTab', 'Channels') }}
             </TabsTrigger>
             <TabsTrigger value="conversations" class="px-2.5 py-0.5 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              {{ tf('console.conversationsTab', 'Conversations') }}
+              {{ tf('console.conversationsTab', 'Cockpit') }}
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -172,7 +172,7 @@ watch(() => status.value.running, (running) => {
           </ScrollArea>
         </div>
 
-        <!-- 会话管理面板 -->
+        <!-- 驾驶舱面板 -->
         <div v-show="consoleTab === 'conversations'" class="h-full">
           <ScrollArea class="h-full">
             <div class="p-3">

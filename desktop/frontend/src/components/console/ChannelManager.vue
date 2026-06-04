@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus, RefreshCw, Search, Layers, Archive, Loader2 } from 'lucide-vue-next'
+import { Plus, Search, Layers, Archive, Loader2 } from 'lucide-vue-next'
 import { useConsoleChannels } from '@/composables/useConsoleChannels'
 import { useLanguage } from '@/composables/useLanguage'
 import ChannelCard from '@/components/console/ChannelCard.vue'
@@ -315,10 +315,6 @@ onMounted(() => {
             class="pl-9"
           />
         </div>
-        <Button variant="outline" size="sm" :disabled="isRefreshing" @click="refreshCurrentChannels">
-          <RefreshCw class="h-3.5 w-3.5" :class="{ 'animate-spin': isRefreshing }" />
-          {{ tf('console.actions.refresh', 'Refresh') }}
-        </Button>
         <!-- 批量测速按钮：桌面端暂不展示，放不下 -->
         <Button size="sm" @click="handleAdd">
           <Plus class="h-3.5 w-3.5" />
