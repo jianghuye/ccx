@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Plus, Search, Layers, Archive, Loader2, ShieldCheck, ShieldOff, Zap } from 'lucide-vue-next'
 import { useConsoleChannels } from '@/composables/useConsoleChannels'
 import { useAdminApi } from '@/composables/useAdminApi'
+import { useStatus } from '@/composables/useStatus'
 import { useLanguage } from '@/composables/useLanguage'
 import ChannelCard from '@/components/console/ChannelCard.vue'
 import ChannelEditDialog from '@/components/console/ChannelEditDialog.vue'
@@ -23,6 +24,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const { t, tf } = useLanguage()
+const { status } = useStatus()
 const {
   activeTab,
   channelsByType,
@@ -101,7 +103,7 @@ async function loadFuzzyMode() {
   fuzzyLoadError.value = false
   try {
     const adminApi = useAdminApi()
-    const data = await adminApi.get<{ fuzzyModeEnabled: boolean }>('/settings/fuzzy-mode')
+    const data = await adminApi.get<{ fuzzyModeEnabled: boolean }>('/api/settings/fuzzy-mode')
     fuzzyEnabled.value = data.fuzzyModeEnabled
   } catch {
     fuzzyLoadError.value = true
@@ -116,7 +118,7 @@ async function toggleFuzzyMode() {
   fuzzyLoading.value = true
   try {
     const adminApi = useAdminApi()
-    await adminApi.put('/settings/fuzzy-mode', { enabled: !fuzzyEnabled.value })
+    await adminApi.put('/api/settings/fuzzy-mode', { enabled: !fuzzyEnabled.value })
     fuzzyEnabled.value = !fuzzyEnabled.value
   } catch (e) {
     actionError.value = e instanceof Error ? e.message : String(e)
@@ -335,8 +337,12 @@ function onDragEnd() {
 
 onMounted(() => {
   activeTab.value = props.type
-  loadFuzzyMode()
 })
+
+// 服务状态变化时自动加载 Fuzzy 模式
+watch(() => status.value.running, (running) => {
+  if (running) loadFuzzyMode()
+}, { immediate: true })
 </script>
 
 <template>
