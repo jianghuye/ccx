@@ -5,6 +5,7 @@
 - **桌面端 Codex/Responses 分层排障诊断** - 在桌面 Agent 页 Codex 卡片新增分层排障，按顺序检查“Codex 配置一致性 → Responses 渠道可用性 → 最近失败请求”，帮助定位 #156 类“本地网关可达但请求失败”的问题。后端扩展 `AgentConfigStatus`（新增 `authMode`/`configConsistent`/`diagnosticCode`/`diagnosticMessage`），在 `getCodexStatus` 中识别 CCS 等工具导致的 `config.toml` 与 `auth.json` 不一致（缺 key、auth_mode 不匹配、插件模式缺 bearer token、旧式配置残缺、配置污染等）；前端新增 `useResponsesDiagnostics` composable，聚合 Codex 配置层、Responses 渠道层（无渠道/全禁用/无 key/熔断/协议错配）与最近失败日志层（401/403、429、5xx、超时）的诊断结论，并在状态页提供最高优先级问题摘要。第一版仅给出诊断与手动修复建议，不做自动修复。涉及 `desktop/internal/configservice/service.go`、`desktop/frontend/src/composables/useResponsesDiagnostics.ts`、`desktop/frontend/src/components/agent/*`、`desktop/frontend/src/components/status/StatusTab.vue`、`desktop/frontend/src/i18n/messages.ts`、`desktop/frontend/src/types/index.ts`
 
 - **历史图片轮次限制与占位符替换** - 新增全局/渠道级历史图片轮次限制配置（`historicalImageTurnLimit`），超过指定轮次的历史对话图片自动替换为 `[Image]` 占位符，避免不必要的 vision 回退模型切换。覆盖 Claude Messages、OpenAI Chat、Responses API、Gemini 四种协议格式。新增环境变量 `HISTORICAL_IMAGE_TURN_LIMIT`、Settings API（`/api/settings/historical-image-turn-limit`）、Web 管理界面全局设置入口与渠道级配置 UI
+- **渠道体验增强与 Messages 渠道级 CCH 开关** - Web/桌面渠道列表新增 15 分钟窗口“缓存写偏高”提醒 badge；桌面端 RunAPI messages 预设默认关闭 `normalizeMetadataUserId`；`stripBillingHeader` 从全局设置下沉为 messages 渠道级开关，默认关闭，并同步补齐 Web/桌面渠道编辑表单与老配置迁移逻辑
 
 ## [v2.8.25] - 2026-06-07
 
