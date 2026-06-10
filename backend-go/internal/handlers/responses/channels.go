@@ -331,6 +331,7 @@ type GetModelsRequest struct {
 	Key                string            `json:"key"`
 	BaseURL            string            `json:"baseUrl"`
 	BaseURLs           []string          `json:"baseUrls"`
+	ServiceType        string            `json:"serviceType"`
 	ProxyURL           string            `json:"proxyUrl"`
 	InsecureSkipVerify *bool             `json:"insecureSkipVerify"`
 	CustomHeaders      map[string]string `json:"customHeaders"`
@@ -357,6 +358,7 @@ func GetChannelModels(cfgManager *config.ConfigManager) gin.HandlerFunc {
 		// 3. 获取 baseUrl（优先使用请求体中的临时 baseUrl，用于新增渠道场景）
 		var baseURL string
 		var channelName string
+		var serviceType string
 		var insecureSkipVerify bool
 		var proxyURL string
 
@@ -370,6 +372,7 @@ func GetChannelModels(cfgManager *config.ConfigManager) gin.HandlerFunc {
 			}
 			baseURL = req.BaseURL
 			channelName = "临时渠道"
+			serviceType = req.ServiceType
 			insecureSkipVerify = false
 			proxyURL = ""
 			if req.InsecureSkipVerify != nil {
@@ -390,6 +393,7 @@ func GetChannelModels(cfgManager *config.ConfigManager) gin.HandlerFunc {
 			channel := cfg.ResponsesUpstream[id]
 			baseURL = channel.BaseURL
 			channelName = channel.Name
+			serviceType = channel.ServiceType
 			insecureSkipVerify = channel.InsecureSkipVerify
 			proxyURL = channel.ProxyURL
 			if req.BaseURL != "" {
@@ -430,7 +434,15 @@ func GetChannelModels(cfgManager *config.ConfigManager) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create request: %v", err)})
 			return
 		}
-		httpReq.Header.Set("Authorization", "Bearer "+apiKey)
+		switch serviceType {
+		case "claude":
+			httpReq.Header.Set("x-api-key", apiKey)
+			httpReq.Header.Set("anthropic-version", "2023-06-01")
+		case "gemini":
+			httpReq.Header.Set("x-goog-api-key", apiKey)
+		default:
+			httpReq.Header.Set("Authorization", "Bearer "+apiKey)
+		}
 		httpReq.Header.Set("Content-Type", "application/json")
 		utils.ApplyCustomHeaders(httpReq.Header, req.CustomHeaders)
 
